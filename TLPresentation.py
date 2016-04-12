@@ -1,48 +1,48 @@
 #!/usr/bin/env python3
 
-from TLPacket import *
-from TLTLVs import *
 from TLInfos import *
 
+def extract_token_from_header(packet):
+    return packet.token
 
-def extractTokenFromHeader(packet):
-    return packet.Token
- 
+def is_discovery(request, packet):
+    return (len(packet.tlvs) == 10 and packet.version == 1 and
+            packet.opcode == 2 and packet.sequence_number == request.sequence_number)
 
-def isDiscovery(request, packet):
-    return len(packet.TLVs) == 10 and packet.Version == 1 and packet.Opcode == 2 and packet.SequenceNumber == request.SequenceNumber
-
-def presentDiscovery(packet):
+def present_discovery(packet):
     model = ''
     name = ''
     fwversion = ''
-    ip = ''
+    ip4 = ''
 
-    for t in packet.TLVs:
-        if t.Tag == 8:
-            model = t.getHumanReadableValue()
-        elif t.Tag == 2:
-            name = t.getHumanReadableValue()
-        elif t.Tag == 7:
-            fwversion = t.getHumanReadableValue()
-        elif t.Tag == 4:
-            ip = t.getHumanReadableValue()
+    for tlv in packet.tlvs:
+        if tlv.tag == 8:
+            model = tlv.get_human_readable_value()
+        elif tlv.tag == 2:
+            name = tlv.get_human_readable_value()
+        elif tlv.tag == 7:
+            fwversion = tlv.get_human_readable_value()
+        elif tlv.tag == 4:
+            ip4 = tlv.get_human_readable_value()
 
-    print('{0:31s} {1:15s} {2:31s} {3:10s}'.format(name, ip, model, fwversion))
+    print('{0:31s} {1:15s} {2:31s} {3:10s}'.format(name, ip4, model, fwversion))
 
 
 
-def presentPortStatistics(packet):
-    print('{0:>2s} {1:<8s} {2:<16s} {3:>10s} {4:>10s} {5:>10s} {6:>10s}'.format('#', 'State', 'Mode', 'Tx Good', 'Tx Bad', 'Rx Good', 'Rx Bad'))
+def present_port_statistics(packet):
+    print('{0:>2s} {1:<8s} {2:<16s} {3:>10s} {4:>10s} {5:>10s} {6:>10s}'
+          .format('#', 'State', 'Mode', 'Tx Good', 'Tx Bad', 'Rx Good', 'Rx Bad'))
     stats = PortStatistics(packet)
-    stats.printPorts()
+    stats.print_ports()
 
 
-def presentCableTest(packet):
-    TestResults = {0: 'no cable', 1: 'normal', 2: 'open', 3: 'short', 4: 'open and short', 5: 'cross-over'}
+def present_cable_test(packet):
+    possible_test_results = {0: 'no cable', 1: 'normal',
+                             2: 'open', 3: 'short',
+                             4: 'open and short', 5: 'cross-over'}
 
-    for i in packet.TLVs:
-        if i.Tag == 16896 and len(i.Value) == 6:
-            print('Port ' + str(i.Value[0]) + ': Length ' + str(i.Value[5]) + ', Result: ' + TestResults.get(i.Value[1], 'unknown'))
-
-    print()
+    for i in packet.tlvs:
+        if i.tag == 16896 and len(i.value) == 6:
+            print('Port {0:2d}: Length {1:3d}m, Diagnosis: {2:14s}'
+                  .format(i.value[0], i.value[5],
+                          possible_test_results.get(i.value[1], 'unknown')))

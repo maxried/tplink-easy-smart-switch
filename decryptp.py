@@ -1,90 +1,110 @@
 #!/usr/bin/env python3
 
-from TLPresentation import *
-from TLPacket import *
-from TLCrypt import *
-from TLPacketForge import *
-from TLActions import *
-
 import getopt
 from sys import argv
 from getpass import getpass
 
+from TLPresentation import present_discovery
+from TLPacket import TLPacket
+from TLCrypt import *
+from TLPacketForge import *
+from TLActions import *
 
-try:
-	opts,args = getopt.getopt(argv[1:], 'di:')
-except:
-	opts = []
-	pass
+def choose_switch(switch_ip_arg):
+    if switch_ip_arg != None:
+        print('Only trying ' + switch_ip_arg)
+        print()
+        tl_discover(switch_ip_arg)
+    else:
+        tl_discover()
 
+    if len(DISCOVERED_SWITCHES) > 1:
+        print(' {0:2s}{1:31s} {2:15s} {3:31s} {4:10s}'
+              .format('#', 'Name', 'IP', 'Model', 'Firmware'))
+        for i, switch in enumerate(DISCOVERED_SWITCHES):
+            print('{0:2d} '.format(i), end='')
+            present_discovery(switch.source_packet)
 
-onlyDecrypt = False
-argSwitchIP = None
-selectedSwitch = None
+        while selection is None:
+            selection_raw = input('Select switch: ')
+            if (selection_raw.isnumeric() and
+                    int(selection_raw) in range(0, len(DISCOVERED_SWITCHES))):
+                selection = int(selection_raw)
 
-for o, a in opts:
-	if o == '-i':
-		argSwitchIP = a
-	elif o == '-d':
-		onlyDecrypt = True
+        selected_switch = DISCOVERED_SWITCHES[selection]
+    elif len(DISCOVERED_SWITCHES) == 1:
+        print('{0:31s} {1:15s} {2:31s} {3:10s}'
+              .format('Name', 'IP', 'Model', 'Firmware'))
+        present_discovery(DISCOVERED_SWITCHES[0].source_packet)
+        selected_switch = DISCOVERED_SWITCHES[0]
+        print()
+    else:
+        print('No switches discovered.')
+        selected_switch = None
 
-
-if onlyDecrypt:
-	with open('test.raw', 'rb') as encrypted_file:
-		data = encrypted_file.read()
-
-	out = TLARCCrypt(data)
-
-	with open('test.dec', 'wb') as outfile:
-	    outfile.write(out)
-
-
-	packet = TLPacket(out)
-	with open('test2.dec', 'wb') as outfile:
-	    outfile.write(packet.toByteArray())
-
-	packet.printSummary()
-else:
-	if argSwitchIP != None:
-		print('Only trying ' + argSwitchIP)
-		TLDiscover(argSwitchIP)
-	else:
-		TLDiscover()
-
-	if len(DiscoveredSwitches) > 0:
-		print(' {0:2s}{1:31s} {2:15s} {3:31s} {4:10s}'.format('#', 'Name', 'IP', 'Model', 'Firmware'))
-		for n, i in enumerate(DiscoveredSwitches):
-			print('{0:2d} '.format(n), end ='')
-			presentDiscovery(i.SourcePacket)
-
-		selection = None if len(DiscoveredSwitches) > 1 else 0
-		while selection == None:
-			selectionRaw = input('Select switch: ')
-			if selectionRaw.isnumeric() and int(selectionRaw) in range(0, len(DiscoveredSwitches)):
-				selection = int(selectionRaw)
-
-		selectedSwitch = DiscoveredSwitches[selection]
-	else:
-		print('No switches discovered.')
-		selectedSwitch = None
+    return selected_switch
 
 
-	if selectedSwitch != None:
-		token = TLGetToken(selectedSwitch.MAC, selectedSwitch.IP)
+def main():
+    try:
+        opts, _ = getopt.getopt(argv[1:], 'di:')
+    except getopt.GetoptError:
+        opts = []
+    except:
+        raise
 
-		loggedIn = False
-		if token != None:
-			while not loggedIn:
-				username = input('User: ')
-				password = getpass('Password: ')
 
-				if TLLogin(selectedSwitch.MAC, selectedSwitch.IP, token, username, password) != 0:
-					print('Wrong credentials')
-				else:
-					loggedIn = True
+    only_decrypt = False
+    switch_ip_arg = None
+    selected_switch = None
 
-			# stats = TLGetPortStatistics(selectedSwitch.MAC, selectedSwitch.IP, token)
-			# presentPortStatistics(stats)
-			for i in range(1,9):
-				cableTest = TLTestCable(selectedSwitch.MAC, selectedSwitch.IP, token, i, username, password)
-				presentCableTest(cableTest)
+    for opt, arg in opts:
+        if opt == '-i':
+            switch_ip_arg = arg
+        elif opt == '-d':
+            only_decrypt = True
+
+
+    if only_decrypt:
+        with open('test.raw', 'rb') as encrypted_file:
+            data = encrypted_file.read()
+
+        out = tl_rc4_crypt(data)
+
+        with open('test.dec', 'wb') as outfile:
+            outfile.write(out)
+
+
+        packet = TLPacket(out)
+        with open('test2.dec', 'wb') as outfile:
+            outfile.write(packet.to_byte_array())
+
+        packet.print_summary()
+    else:
+        selected_switch = choose_switch(switch_ip_arg)
+
+        if selected_switch != None:
+            token = tl_get_token(selected_switch.mac, selected_switch.ip4)
+
+            logged_in = False
+            if token != None:
+                while not logged_in:
+                    username = input('User: ')
+                    password = getpass('Password: ')
+
+                    if tl_login(selected_switch.mac, selected_switch.ip4,
+                                token, username, password) != 0:
+                        print('Wrong credentials')
+                    else:
+                        logged_in = True
+
+                # stats = TLGetPortStatistics(selectedSwitch.MAC, selectedSwitch.IP, token)
+                # presentPortStatistics(stats)
+                for i in range(1, 9):
+                    cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
+                                                       token, i, username, password)
+                    present_cable_test(cable_test_results)
+
+
+if __name__ == '__main__':
+    main()

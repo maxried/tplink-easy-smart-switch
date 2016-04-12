@@ -1,90 +1,91 @@
 #!/usr/bin/env python3
 
-from TLPacket import *
-from TLTLVs import *
 from random import randint
 
+from TLPacket import *
+from TLTLVs import *
 
-def forgeCommonPacket(opcode, switchMAC = b'\x00\x00\x00\x00\x00\x00', computerMAC = b'\x00\x00\x00\x00\x00\x00', token = 0):
+
+def forge_common_packet(opcode, switchMAC=b'\x00\x00\x00\x00\x00\x00', computerMAC=b'\x00\x00\x00\x00\x00\x00', token=0):
     p = TLPacket()
 
-    p.Version = 1
-    p.Opcode = opcode
-    p.MACSwitch = switchMAC
-    p.MACComputer = computerMAC
-    p.SequenceNumber = randint(0, 1000)
-    p.ErrorCode = 0
-    p.Length = 0
-    p.Fragment = 0
-    p.Flags = 0
-    p.Token = token
-    p.Checksum = 0
+    p.version = 1
+    p.opcode = opcode
+    p.mac_switch = switchMAC
+    p.mac_computer = computerMAC
+    p.sequence_number = randint(0, 1000)
+    p.error_code = 0
+    p.length = 0
+    p.fragment = 0
+    p.flags = 0
+    p.token = token
+    p.checksum = 0
     return p
 
 
 
-def endTLVList(packet):
+def end_tlv_list(packet):
     t = TLV()
-    t.Tag = 65535
-    t.Length = 0
-    t.Value = b''
-    packet.TLVs.append(t)
+    t.tag = 65535
+    t.length = 0
+    t.value = b''
+    packet.tlvs.append(t)
 
 
 
-def forgeDiscovery():
-    p = forgeCommonPacket(0)
-    endTLVList(p)
+def forge_discovery():
+    p = forge_common_packet(0)
+    end_tlv_list(p)
 
-    return p.toByteArray()
-
-
-
-def forgeGetToken(switchMAC):
-    p = forgeCommonPacket(1, switchMAC)
-
-    t = TLV()
-    t.Tag = 2305
-    t.Length = 0
-    t.Value = b''
-    p.TLVs.append(t)
-
-    endTLVList(p)
-
-    return p.toByteArray()
+    return p.to_byte_array()
 
 
 
-def forgeLogin(switchMAC, token, user, password):
-    p = forgeCommonPacket(3, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
+def forge_get_token(switchMAC):
+    p = forge_common_packet(1, switchMAC)
 
     t = TLV()
-    t.Tag = 512
-    t.setStringValue(user)
-    p.TLVs.append(t)
+    t.tag = 2305
+    t.length = 0
+    t.value = b''
+    p.tlvs.append(t)
+
+    end_tlv_list(p)
+
+    return p.to_byte_array()
+
+
+
+def forge_login(switchMAC, token, user, password):
+    p = forge_common_packet(3, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
 
     t = TLV()
-    t.Tag = 514
-    t.setStringValue(password)
-    p.TLVs.append(t)
-
-    endTLVList(p)
-
-    return p.toByteArray()
-
-
-def forgeCableTest(switchMAC, token, portnum, user, password):
-    p = forgeCommonPacket(3, switchMAC,  b'\x00\x00\x00\x00\x00\x00', token)
+    t.tag = 512
+    t.set_string_value(user)
+    p.tlvs.append(t)
 
     t = TLV()
-    t.Tag = 512
-    t.setStringValue(user)
-    p.TLVs.append(t)
+    t.tag = 514
+    t.set_string_value(password)
+    p.tlvs.append(t)
+
+    end_tlv_list(p)
+
+    return p.to_byte_array()
+
+
+def forge_cable_test(switchMAC, token, portnum, user, password):
+    p = forge_common_packet(3, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
 
     t = TLV()
-    t.Tag = 514
-    t.setStringValue(password)
-    p.TLVs.append(t)
+    t.tag = 512
+    t.set_string_value(user)
+    p.tlvs.append(t)
+
+    t = TLV()
+    t.tag = 514
+    t.set_string_value(password)
+    p.tlvs.append(t)
 
     dataA = bytearray()
     dataA.append(portnum & 0xFF)
@@ -94,25 +95,25 @@ def forgeCableTest(switchMAC, token, portnum, user, password):
     dataA.append(0x00)
     dataA.append(0x00)
     t = TLV()
-    t.Tag = 16896
-    t.Value = bytes(dataA)
-    t.Length = 6
-    p.TLVs.append(t)
+    t.tag = 16896
+    t.value = bytes(dataA)
+    t.length = 6
+    p.tlvs.append(t)
 
-    endTLVList(p)
+    end_tlv_list(p)
 
-    return p.toByteArray()
+    return p.to_byte_array()
 
 
-def forgeGetPortStats(switchMAC, token):
-    p = forgeCommonPacket(1, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
+def forge_get_port_stats(switchMAC, token):
+    p = forge_common_packet(1, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
 
     t = TLV()
-    t.Tag = 16384
-    t.Length = 0
-    t.Value = b''
-    p.TLVs.append(t)
+    t.tag = 16384
+    t.length = 0
+    t.value = b''
+    p.tlvs.append(t)
 
-    endTLVList(p)
+    end_tlv_list(p)
 
-    return p.toByteArray()
+    return p.to_byte_array()

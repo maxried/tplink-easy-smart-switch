@@ -9,169 +9,173 @@ from TLPacket import *
 from TLPresentation import *
 
 class TLSwitch:
-	def __init__(self, packet):
-		for i in packet.TLVs:
-			if i.Tag == 2:
-				self.Name = i.getHumanReadableValue()
-			elif i.Tag == 4:
-				self.IP = i.getHumanReadableValue()
-			elif i.Tag == 3:
-				self.MAC = i.Value
-		self.SourcePacket = packet
+    def __init__(self, packet):
+        self.name = ''
+        self.ip4 = ''
+        self.mac = b'\x00\x00\x00\x00\x00\x00'
 
+        self.source_packet = packet
 
-
-PortCS = int.from_bytes(b'tp', 'big')
-PortSC = PortCS + 1
-BroadcastIP = '255.255.255.255'
-
-DiscoveredSwitches = []
-
-
-def TLDiscover(target = BroadcastIP, duration = 1):
-	forged = TLPacket(forgeDiscovery())
-
-	send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	receive.bind(('0.0.0.0', PortSC))
-	receive.setblocking(False)
-
-	discoveryRequest = TLPacket(forgeDiscovery())
-	send.sendto(TLARCCrypt(discoveryRequest.toByteArray()), (target, PortCS))
-
-	start = time.time()
-	
-	while time.time() - start <= duration:
-		try:
-			data, addr = receive.recvfrom(1500)
-			packet = TLPacket(TLARCCrypt(data))
-
-			if isDiscovery(discoveryRequest, packet):
-				found = False
-				thisOne = TLSwitch(packet)
-
-				for i in DiscoveredSwitches:
-					if i.IP == thisOne.IP:
-						found = True
-
-				if not found:
-					#packet.printSummary()
-					#presentDiscovery(packet)
-					DiscoveredSwitches.append(thisOne)
-					if target != BroadcastIP:
-						return
-		
-		except:
-			pass
+        for i in packet.tlvs:
+            if i.tag == 2:
+                self.name = i.get_human_readable_value()
+            elif i.tag == 4:
+                self.ip4 = i.get_human_readable_value()
+            elif i.tag == 3:
+                self.mac = i.value
 
 
 
 
-def TLGetToken(switchmac, switchip, timeout = 1):
-	send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	receive.bind(('0.0.0.0', PortSC))
-	receive.setblocking(False)
 
-	forged = TLPacket(forgeGetToken(switchmac))
-	send.sendto(TLARCCrypt(forged.toByteArray()), (switchip, PortCS))
+PORTCS = int.from_bytes(b'tp', 'big')
+PORTSC = PORTCS + 1
+BROADCAST_IP = '255.255.255.255'
 
-	start = time.time()
-	
-	while time.time() - start <= timeout:
-		try:
-			data, addr = receive.recvfrom(1500)
-			packet = TLPacket(TLARCCrypt(data))
-
-			if packet.SequenceNumber == forged.SequenceNumber:
-				return extractTokenFromHeader(packet)
-
-		except:
-			pass
-
-	return None
+DISCOVERED_SWITCHES = []
 
 
+def tl_discover(target=BROADCAST_IP, duration=1):
+    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    receive.bind(('0.0.0.0', PORTSC))
+    receive.setblocking(False)
 
+    discovery_request = TLPacket(forge_discovery())
+    send.sendto(tl_rc4_crypt(discovery_request.to_byte_array()), (target, PORTCS))
 
-def TLLogin(switchmac, switchip, token, user, password, timeout = 1):
-	send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	receive.bind(('0.0.0.0', PortSC))
-	receive.setblocking(False)
+    start = time.time()
 
-	forged = TLPacket(forgeLogin(switchmac, token, user, password))
-	send.sendto(TLARCCrypt(forged.toByteArray()), (switchip, PortCS))
+    while time.time() - start <= duration:
+        try:
+            data, _ = receive.recvfrom(1500)
+            packet = TLPacket(tl_rc4_crypt(data))
 
-	start = time.time()
-	
-	while time.time() - start <= timeout:
-		try:
-			data, addr = receive.recvfrom(1500)
-			packet = TLPacket(TLARCCrypt(data))
+            if is_discovery(discovery_request, packet):
+                found = False
+                this_one = TLSwitch(packet)
 
-			if packet.SequenceNumber == forged.SequenceNumber:
-				return packet.ErrorCode
+                for i in DISCOVERED_SWITCHES:
+                    if i.ip4 == this_one.ip4:
+                        found = True
 
-		except:
-			pass
-
-	return None
+                if not found:
+                    #packet.printSummary()
+                    #presentDiscovery(packet)
+                    DISCOVERED_SWITCHES.append(this_one)
+                    if target != BROADCAST_IP:
+                        return
+        except:
+            pass
 
 
 
 
-def TLGetPortStatistics(switchmac, switchip, token, timeout = 1):
-	send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	receive.bind(('0.0.0.0', PortSC))
-	receive.setblocking(False)
+def tl_get_token(switchmac, switchip, timeout=1):
+    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    receive.bind(('0.0.0.0', PORTSC))
+    receive.setblocking(False)
 
-	forged = TLPacket(forgeGetPortStats(switchmac, token))
-	send.sendto(TLARCCrypt(forged.toByteArray()), (switchip, PortCS))
+    forged = TLPacket(forge_get_token(switchmac))
+    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
 
-	start = time.time()
-	
-	while time.time() - start <= timeout:
-		try:
-			data, addr = receive.recvfrom(1500)
-			packet = TLPacket(TLARCCrypt(data))
+    start = time.time()
 
-			if packet.SequenceNumber == forged.SequenceNumber:
-				return packet
+    while time.time() - start <= timeout:
+        try:
+            data, _ = receive.recvfrom(1500)
+            packet = TLPacket(tl_rc4_crypt(data))
 
-		except:
-			pass
+            if packet.sequence_number == forged.sequence_number:
+                return extract_token_from_header(packet)
 
-	return None
+        except:
+            pass
+
+    return None
 
 
 
-def TLTestCable(switchmac, switchip, token, portnum, user, password, timeout = 10):
-	send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	receive.bind(('0.0.0.0', PortSC))
-	receive.setblocking(False)
 
-	forged = TLPacket(forgeCableTest(switchmac, token, portnum, user, password))
-	send.sendto(TLARCCrypt(forged.toByteArray()), (switchip, PortCS))
+def tl_login(switchmac, switchip, token, user, password, timeout=1):
+    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    receive.bind(('0.0.0.0', PORTSC))
+    receive.setblocking(False)
 
-	start = time.time()
-	
-	while time.time() - start <= timeout:
-		try:
-			data, addr = receive.recvfrom(1500)
-			packet = TLPacket(TLARCCrypt(data))
+    forged = TLPacket(forge_login(switchmac, token, user, password))
+    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
 
-			if packet.SequenceNumber == forged.SequenceNumber:
-				return packet
+    start = time.time()
 
-		except:
-			pass
+    while time.time() - start <= timeout:
+        try:
+            data, _ = receive.recvfrom(1500)
+            packet = TLPacket(tl_rc4_crypt(data))
 
-	return None
+            if packet.sequence_number == forged.sequence_number:
+                return packet.error_code
+
+        except:
+            pass
+
+    return None
+
+
+
+
+def tl_get_port_statistics(switchmac, switchip, token, timeout=1):
+    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    receive.bind(('0.0.0.0', PORTSC))
+    receive.setblocking(False)
+
+    forged = TLPacket(forge_get_port_stats(switchmac, token))
+    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
+
+    start = time.time()
+
+    while time.time() - start <= timeout:
+        try:
+            data, _ = receive.recvfrom(1500)
+            packet = TLPacket(tl_rc4_crypt(data))
+
+            if packet.sequence_number == forged.sequence_number:
+                return packet
+
+        except:
+            pass
+
+    return None
+
+
+
+def tl_test_cable(switchmac, switchip, token, portnum, user, password, timeout=10):
+    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    receive.bind(('0.0.0.0', PORTSC))
+    receive.setblocking(False)
+
+    forged = TLPacket(forge_cable_test(switchmac, token, portnum, user, password))
+    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
+
+    start = time.time()
+
+    while time.time() - start <= timeout:
+        try:
+            data, _ = receive.recvfrom(1500)
+            packet = TLPacket(tl_rc4_crypt(data))
+
+            if packet.sequence_number == forged.sequence_number:
+                return packet
+
+        except:
+            pass
+
+    return None

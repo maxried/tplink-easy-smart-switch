@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+"""Offers help for parsing Tag-Length-Values."""
 
-TLVNames = {1:     'SYSINFO_PRODUCT_MODEL',
+TLVNAMES = {1:     'SYSINFO_PRODUCT_MODEL',
             2:     'SYSINFO_DESCRIPTION',
             3:     'SYSINFO_MAC',
             4:     'SYSINFO_IP',
@@ -60,7 +61,7 @@ TLVNames = {1:     'SYSINFO_PRODUCT_MODEL',
             17152: 'MONITOR_LOOP_PREVENTION',
             65535: 'EOT'}
 
-TLVTypes = {1:     'STRING',
+TLVTYPES = {1:     'STRING',
             2:     'STRING',
             3:     'MAC',
             4:     'IP',
@@ -74,11 +75,11 @@ TLVTypes = {1:     'STRING',
             513:   'STRING',
             514:   'STRING',
             515:   'STRING',
-           # 768:   'SYSCFG_BACKUP_FILE',
-           # 769:   'SYSCFG_RESTORE_FILE',
-           # 773:   'SYSREBOOT_REBOOT',
-           # 1280:  'SYSRESET_RESET',
-           # 1536:  'SYSUPGRADE_UPGRADE_FILE',
+            # 768:   'SYSCFG_BACKUP_FILE',
+            # 769:   'SYSCFG_RESTORE_FILE',
+            # 773:   'SYSREBOOT_REBOOT',
+            # 1280:  'SYSRESET_RESET',
+            # 1536:  'SYSUPGRADE_UPGRADE_FILE',
             1793:  'STRING',
             1794:  'STRING',
             1795:  'STRING',
@@ -93,78 +94,78 @@ TLVTypes = {1:     'STRING',
             2056:  'IP',
             2057:  'IP',
             2058:  'IP',
-           # 2304:  'SYSCFG_SAVE_CONFIG',
-           # 2305:  'SYS_GET_TOKEN',
-           # 4096:  'SWITCH_PORTCONFIG',
-           # 4352:  'SWITCH_IGMP_STATUS',
-           # 4353:  'SWITCH_IGMP_MULTI',
-           # 4354:  'SWITCH_IGMP_REPORT_MSG_SUPPRESION',
-           # 4608:  'SWITCH_TRUNK',
-           # 8192:  'VLANMTU_STATUS_UPLINKPORT',
-           # 8448:  'VLANPORTBASE_STATUS',
-           # 8449:  'VLANPORTBASE_PORT',
-           # 8450:  'VLANPORTBASE_VLAN_SUPPORT',
-           # 8704:  'VLAN8021Q_STATUS',
-           # 8705:  'VLAN8021Q_PORT',
-           # 8706:  'VLAN8021Q_PVID',
-           # 8707:  'VLAN8021Q_VLAN_SUPPORT',
-           # 12288: 'QOS_BASIC_MODE',
-           # 12289: 'QOS_BASIC_PRIORITY',
-           # 12544: 'QOS_BANDWIDTH_INGRESS',
-           # 12545: 'QOS_BANDWIDTH_EGRESS',
-           # 12800: 'QOS_STORM_CONTROL',
-           # 16384: 'MONITOR_PORT_STATISTICS',
-           # 16640: 'MONITOR_PORT_MIRROR',
-           # 16896: 'MONITOR_CABLE_TEST',
-           # 17152: 'MONITOR_LOOP_PREVENTION',
+            # 2304:  'SYSCFG_SAVE_CONFIG',
+            # 2305:  'SYS_GET_TOKEN',
+            # 4096:  'SWITCH_PORTCONFIG',
+            # 4352:  'SWITCH_IGMP_STATUS',
+            # 4353:  'SWITCH_IGMP_MULTI',
+            # 4354:  'SWITCH_IGMP_REPORT_MSG_SUPPRESION',
+            # 4608:  'SWITCH_TRUNK',
+            # 8192:  'VLANMTU_STATUS_UPLINKPORT',
+            # 8448:  'VLANPORTBASE_STATUS',
+            # 8449:  'VLANPORTBASE_PORT',
+            # 8450:  'VLANPORTBASE_VLAN_SUPPORT',
+            # 8704:  'VLAN8021Q_STATUS',
+            # 8705:  'VLAN8021Q_PORT',
+            # 8706:  'VLAN8021Q_PVID',
+            # 8707:  'VLAN8021Q_VLAN_SUPPORT',
+            # 12288: 'QOS_BASIC_MODE',
+            # 12289: 'QOS_BASIC_PRIORITY',
+            # 12544: 'QOS_BANDWIDTH_INGRESS',
+            # 12545: 'QOS_BANDWIDTH_EGRESS',
+            # 12800: 'QOS_STORM_CONTROL',
+            # 16384: 'MONITOR_PORT_STATISTICS',
+            # 16640: 'MONITOR_PORT_MIRROR',
+            # 16896: 'MONITOR_CABLE_TEST',
+            # 17152: 'MONITOR_LOOP_PREVENTION',
             65535: 'NULL'}
 
+
 class TLV:
-   # Tag = int()
-   # Length = int()
-   # Value = bytearray()
+    """This is a Tag-Length-Value combination as used to comunicate with the switches."""
 
-    def setStringValue(self, val):
-      self.Length = len(val) + 1
-      self.Value = bytearray(val, 'utf-8') + b'\x00'
+    def __init__(self):
+        # defaults
+        self.length = 0
+        self.value = bytes()
+        self.tag = 0
+
+    def set_string_value(self, val):
+        """Sets the string value of a TLV and sets the correct length and termination."""
+        self.length = len(val) + 1
+        self.value = bytearray(val, 'utf-8') + b'\x00'
 
 
-    def getHumanReadableTag(self):
-        return TLVNames.get(self.Tag, '?')
-        
-    def getHumanReadableValue(self):
-        t = TLVTypes.get(self.Tag, 'BINARY')
+    def get_human_readable_tag(self):
+        """Returns the name of the tag."""
+        return TLVNAMES.get(self.tag, '?')
 
-        if t == 'IP':
-            if len(self.Value) != 4:
-                return 'malformed'
-            else:
-                return '{:d}.{:d}.{:d}.{:d}'.format(self.Value[0], self.Value[1], self.Value[2], self.Value[3])
-        elif t == 'MAC':
-            if len(self.Value) != 6:
-                return 'malformed'
-            else:
-                return '{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}'.format(self.Value[0], self.Value[1], self.Value[2], self.Value[3], self.Value[4], self.Value[5])
-        elif t == 'STRING':
-            if len(self.Value) == 0:
-                return 'empty'
-            elif len(self.Value) > 1:
-                return self.Value[:-1].decode('utf-8')
-            else:
-                return 'malformed'
-        elif t == 'BOOLEAN':
-                if len(self.Value) != 1:
-                    return 'malformed'
-                else:
-                    return 'true' if self.Value[0] == 1 else 'false'
-        elif t == 'BINARY':
-                return "".join(map(lambda b: format(b, "02X"), self.Value))
-        elif t == 'BYTE':
-            if len(self.Value) != 1:
-                return 'malformed'
-            else:
-                return '{:d}'.format(self.Value[0])
+    def get_human_readable_value(self):
+        """Returns a string containing the value."""
+        new_tlv = TLVTYPES.get(self.tag, 'BINARY')
+        result = ''
+
+        if new_tlv == 'IP':
+            result = ('malformed' if len(self.value) != 4 else
+                      ('{:d}.{:d}.{:d}.{:d}'
+                       .format(self.value[0], self.value[1], self.value[2], self.value[3])))
+        elif new_tlv == 'MAC':
+            result = ('malformed' if len(self.value) != 6 else
+                      ('{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}'
+                       .format(self.value[0], self.value[1], self.value[2],
+                               self.value[3], self.value[4], self.value[5])))
+        elif new_tlv == 'STRING':
+            result = 'empty' if len(self.value) == 0 else self.value[:-1].decode('utf-8')
+        elif new_tlv == 'BOOLEAN':
+            result = ('malformed' if len(self.value) != 1 else
+                      'true' if self.value[0] == 1 else 'false')
+        elif new_tlv == 'BINARY':
+            result = ''.join([format(b, '02X') for b in self.value])
+        elif new_tlv == 'BYTE':
+            result = 'malformed' if len(self.value) != 1 else '{:d}'.format(self.value[0])
         else:
-            return '-'
+            result = '-'
+
+        return result
 
 
