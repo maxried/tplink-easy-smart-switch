@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from TLPacket import *
+"""Toolbox to store the state of the switch"""
 
 class PortStatisticsPort:
+    """Stats of a single port"""
     def __init__(self, portnumber, enabled, mode, tg, tb, rg, rb):
         self.number = portnumber
         self.enabled = enabled
@@ -14,6 +15,7 @@ class PortStatisticsPort:
 
 
 class PortStatistics:
+    """Stats of all port"""
     def __init__(self, packet):
         self.ports = []
 
@@ -31,6 +33,7 @@ class PortStatistics:
                 self.ports.append(stat)
 
     def print_ports(self):
+        """Prints the entire port statistic for all ports"""
         modes = {0: "Link Down", 1: "Auto", 2: "10Half",
                  3: "10Full", 4: "100Half", 5: "100Full", 6: "1000Full"}
 

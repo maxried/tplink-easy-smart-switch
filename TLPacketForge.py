@@ -1,119 +1,135 @@
 #!/usr/bin/env python3
 
+"""Module to create common packets understood and used by TP-Link software and firmware"""
+
 from random import randint
 
-from TLPacket import *
-from TLTLVs import *
+from TLPacket import TLPacket
+from TLTLVs import TLV
 
 
-def forge_common_packet(opcode, switchMAC=b'\x00\x00\x00\x00\x00\x00', computerMAC=b'\x00\x00\x00\x00\x00\x00', token=0):
-    p = TLPacket()
+def forge_common_packet(opcode, switch_mac=b'\x00\x00\x00\x00\x00\x00',
+                        computer_mac=b'\x00\x00\x00\x00\x00\x00', token=0):
+    """Creates package stub with commonly used parameters and a random sequence number."""
 
-    p.version = 1
-    p.opcode = opcode
-    p.mac_switch = switchMAC
-    p.mac_computer = computerMAC
-    p.sequence_number = randint(0, 1000)
-    p.error_code = 0
-    p.length = 0
-    p.fragment = 0
-    p.flags = 0
-    p.token = token
-    p.checksum = 0
-    return p
+    packet = TLPacket()
+    packet.version = 1
+    packet.opcode = opcode
+    packet.mac_switch = switch_mac
+    packet.mac_computer = computer_mac
+    packet.sequence_number = randint(0, 1000)
+    packet.error_code = 0
+    packet.length = 0
+    packet.fragment = 0
+    packet.flags = 0
+    packet.token = token
+    packet.checksum = 0
+    return packet
 
 
 
 def end_tlv_list(packet):
-    t = TLV()
-    t.tag = 65535
-    t.length = 0
-    t.value = b''
-    packet.tlvs.append(t)
+    """Puts the end of transmission TLV to the end of the packet. Use before transmission."""
+
+    tlv = TLV()
+    tlv.tag = 65535
+    tlv.length = 0
+    tlv.value = b''
+    packet.tlvs.append(tlv)
 
 
 
 def forge_discovery():
-    p = forge_common_packet(0)
-    end_tlv_list(p)
+    """Creates a discovery request."""
 
-    return p.to_byte_array()
+    packet = forge_common_packet(0)
+    end_tlv_list(packet)
 
-
-
-def forge_get_token(switchMAC):
-    p = forge_common_packet(1, switchMAC)
-
-    t = TLV()
-    t.tag = 2305
-    t.length = 0
-    t.value = b''
-    p.tlvs.append(t)
-
-    end_tlv_list(p)
-
-    return p.to_byte_array()
+    return packet.to_byte_array()
 
 
 
-def forge_login(switchMAC, token, user, password):
-    p = forge_common_packet(3, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
+def forge_get_token(switch_mac):
+    """Create a token request."""
 
-    t = TLV()
-    t.tag = 512
-    t.set_string_value(user)
-    p.tlvs.append(t)
+    packet = forge_common_packet(1, switch_mac)
 
-    t = TLV()
-    t.tag = 514
-    t.set_string_value(password)
-    p.tlvs.append(t)
+    tlv = TLV()
+    tlv.tag = 2305
+    tlv.length = 0
+    tlv.value = b''
+    packet.tlvs.append(tlv)
 
-    end_tlv_list(p)
+    end_tlv_list(packet)
 
-    return p.to_byte_array()
+    return packet.to_byte_array()
 
 
-def forge_cable_test(switchMAC, token, portnum, user, password):
-    p = forge_common_packet(3, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
 
-    t = TLV()
-    t.tag = 512
-    t.set_string_value(user)
-    p.tlvs.append(t)
+def forge_login(switch_mac, token, user, password):
+    """Authorize with switch."""
 
-    t = TLV()
-    t.tag = 514
-    t.set_string_value(password)
-    p.tlvs.append(t)
+    packet = forge_common_packet(3, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
-    dataA = bytearray()
-    dataA.append(portnum & 0xFF)
-    dataA.append(0x01)
-    dataA.append(0x00)
-    dataA.append(0x00)
-    dataA.append(0x00)
-    dataA.append(0x00)
-    t = TLV()
-    t.tag = 16896
-    t.value = bytes(dataA)
-    t.length = 6
-    p.tlvs.append(t)
+    tlv = TLV()
+    tlv.tag = 512
+    tlv.set_string_value(user)
+    packet.tlvs.append(tlv)
 
-    end_tlv_list(p)
+    tlv = TLV()
+    tlv.tag = 514
+    tlv.set_string_value(password)
+    packet.tlvs.append(tlv)
 
-    return p.to_byte_array()
+    end_tlv_list(packet)
+
+    return packet.to_byte_array()
 
 
-def forge_get_port_stats(switchMAC, token):
-    p = forge_common_packet(1, switchMAC, b'\x00\x00\x00\x00\x00\x00', token)
+def forge_cable_test(switch_mac, token, portnum, user, password):
+    """Issue a cable test quest."""
 
-    t = TLV()
-    t.tag = 16384
-    t.length = 0
-    t.value = b''
-    p.tlvs.append(t)
+    packet = forge_common_packet(3, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
-    end_tlv_list(p)
+    tlv = TLV()
+    tlv.tag = 512
+    tlv.set_string_value(user)
+    packet.tlvs.append(tlv)
 
-    return p.to_byte_array()
+    tlv = TLV()
+    tlv.tag = 514
+    tlv.set_string_value(password)
+    packet.tlvs.append(tlv)
+
+    payload = bytearray()
+    payload.append(portnum & 0xFF)
+    payload.append(0x01)
+    payload.append(0x00)
+    payload.append(0x00)
+    payload.append(0x00)
+    payload.append(0x00)
+    tlv = TLV()
+    tlv.tag = 16896
+    tlv.value = bytes(payload)
+    tlv.length = 6
+    packet.tlvs.append(tlv)
+
+    end_tlv_list(packet)
+
+    return packet.to_byte_array()
+
+
+def forge_get_port_stats(switch_mac, token):
+    """Gets PHY stats of all ports."""
+
+    packet = forge_common_packet(1, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+
+    tlv = TLV()
+    tlv.tag = 16384
+    tlv.length = 0
+    tlv.value = b''
+    packet.tlvs.append(tlv)
+
+    end_tlv_list(packet)
+
+    return packet.to_byte_array()

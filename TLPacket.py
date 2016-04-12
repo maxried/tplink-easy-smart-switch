@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+"""TP-Link packet parser"""
+
 from TLTLVs import TLV
 
 class TLPacket:
+    """Class for TP-Link packet representation"""
     def __init__(self, decrypted=None):
         if decrypted is None:
             self.version = 0
@@ -47,25 +50,27 @@ class TLPacket:
                 self.tlvs.append(ntlv)
 
     def print_summary(self):
-        print("version:        " + str(self.version))
-        print("opcode:         " + str(self.opcode))
+        """Prints a human readable summary of the packet to stdout"""
+        print("Version:        " + str(self.version))
+        print("Opcode:         " + str(self.opcode))
         print("MAC Switch:     " + "".join([format(b, "02X") for b in self.mac_switch]))
         print("MAC Computer:   " + "".join([format(b, "02X") for b in self.mac_computer]))
-        print("sequence_number: " + str(self.sequence_number))
+        print("Sequence Number: " + str(self.sequence_number))
         print("Error:          " + str(self.error_code))
-        print("length:         " + str(self.length))
-        print("fragment:       " + str(self.fragment))
-        print("flags:          " + str(self.flags))
-        print("token:          " + str(self.token))
-        print("checksum:       " + str(self.checksum))
+        print("Length:         " + str(self.length))
+        print("Fragment:       " + str(self.fragment))
+        print("Flags:          " + str(self.flags))
+        print("Token:          " + str(self.token))
+        print("Checksum:       " + str(self.checksum))
 
         for tlv in self.tlvs:
             print()
             print("Tag " + str(tlv.tag) + " (" + tlv.get_human_readable_tag() + ")")
-            print("length " + str(tlv.length))
+            print("Length " + str(tlv.length))
             print("Value: " + tlv.get_human_readable_value())
 
     def to_byte_array(self):
+        """Serialize the packet described by this instance to bytearray to send it to the switch^"""
         header = bytearray()
         body = bytearray()
 
