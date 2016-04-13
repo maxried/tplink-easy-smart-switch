@@ -5,7 +5,7 @@
 from random import randint
 
 from TLPacket import TLPacket
-from TLTLVs import TLV
+from TLTLVs import TLV, TLVTAGS
 
 
 def forge_common_packet(opcode, switch_mac=b'\x00\x00\x00\x00\x00\x00',
@@ -31,10 +31,7 @@ def forge_common_packet(opcode, switch_mac=b'\x00\x00\x00\x00\x00\x00',
 def end_tlv_list(packet):
     """Puts the end of transmission TLV to the end of the packet. Use before transmission."""
 
-    tlv = TLV()
-    tlv.tag = 65535
-    tlv.length = 0
-    tlv.value = b''
+    tlv = TLV(TLVTAGS['EOT'])
     packet.tlvs.append(tlv)
 
 
@@ -54,10 +51,7 @@ def forge_get_token(switch_mac):
 
     packet = forge_common_packet(1, switch_mac)
 
-    tlv = TLV()
-    tlv.tag = 2305
-    tlv.length = 0
-    tlv.value = b''
+    tlv = TLV(TLVTAGS['SYS_GET_TOKEN'])
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -71,14 +65,10 @@ def forge_login(switch_mac, token, user, password):
 
     packet = forge_common_packet(3, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
-    tlv = TLV()
-    tlv.tag = 512
-    tlv.set_string_value(user)
+    tlv = TLV(TLVTAGS['SYSUSER_OLD_NAME'], user)
     packet.tlvs.append(tlv)
 
-    tlv = TLV()
-    tlv.tag = 514
-    tlv.set_string_value(password)
+    tlv = TLV(TLVTAGS['SYSUSER_OLD_PASSWORD'], password)
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -91,16 +81,15 @@ def forge_cable_test(switch_mac, token, portnum, user, password):
 
     packet = forge_common_packet(3, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
-    tlv = TLV()
-    tlv.tag = 512
-    tlv.set_string_value(user)
+
+    # Cable Diagnostics needs another authentication
+    tlv = TLV(TLVTAGS['SYSUSER_OLD_NAME'], user)
     packet.tlvs.append(tlv)
 
-    tlv = TLV()
-    tlv.tag = 514
-    tlv.set_string_value(password)
+    tlv = TLV(TLVTAGS['SYSUSER_OLD_PASSWORD'], password)
     packet.tlvs.append(tlv)
 
+    # First byte is port number, second is 0x01, no clue why.
     payload = bytearray()
     payload.append(portnum & 0xFF)
     payload.append(0x01)
@@ -108,10 +97,7 @@ def forge_cable_test(switch_mac, token, portnum, user, password):
     payload.append(0x00)
     payload.append(0x00)
     payload.append(0x00)
-    tlv = TLV()
-    tlv.tag = 16896
-    tlv.value = bytes(payload)
-    tlv.length = 6
+    tlv = TLV(TLVTAGS['MONITOR_CABLE_TEST'], bytes(payload))
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -124,10 +110,7 @@ def forge_get_port_stats(switch_mac, token):
 
     packet = forge_common_packet(1, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
-    tlv = TLV()
-    tlv.tag = 16384
-    tlv.length = 0
-    tlv.value = b''
+    tlv = TLV(TLVTAGS['MONITOR_PORT_STATISTICS'])
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)

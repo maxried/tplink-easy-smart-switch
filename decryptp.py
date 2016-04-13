@@ -6,12 +6,13 @@
 import getopt
 from sys import argv
 from getpass import getpass
+import socket
 
-from TLPresentation import present_discovery, present_cable_test
+from TLPresentation import present_discovery, present_cable_test, present_port_statistics
 from TLPacket import TLPacket
-from TLCrypt import *
-from TLPacketForge import *
-from TLActions import *
+from TLCrypt import tl_rc4_crypt
+#from TLPacketForge import *
+from TLActions import tl_test_cable, tl_discover, DISCOVERED_SWITCHES, tl_get_token, tl_login, tl_get_port_statistics, PORTSC, PORTCS
 
 def choose_switch(switch_ip_arg):
     """Discover switches, list details and display selection prompt."""
@@ -66,13 +67,13 @@ def decrypt_test_dot_raw():
         outfile.write(packet.to_byte_array())
 
     packet.print_summary()
-    
+
 
 
 def main():
     """The main method."""
     try:
-        opts, _ = getopt.getopt(argv[1:], 'di:')
+        opts, _ = getopt.getopt(argv[1:], 'ldi:')
     except getopt.GetoptError:
         opts = []
     except:
@@ -80,6 +81,7 @@ def main():
 
 
     only_decrypt = False
+    only_listen_and_decrypt = False
     switch_ip_arg = None
     selected_switch = None
 
@@ -88,12 +90,47 @@ def main():
             switch_ip_arg = arg
         elif opt == '-d':
             only_decrypt = True
+        elif opt == '-l':
+            only_listen_and_decrypt = True
+
+    if only_listen_and_decrypt:
+        receive1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        receive1.bind(('0.0.0.0', PORTSC))
+        receive1.setblocking(False)
+
+        receive2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        receive2.bind(('0.0.0.0', PORTCS))
+        receive2.setblocking(False)
+
+        while True:
+            try:
+                data, _ = receive1.recvfrom(1500)
+                packet = TLPacket(tl_rc4_crypt(data))
+
+                print('\033[94m' + "-----> Switch to computer")
+                packet.print_summary()
+                print("<----- Switch to computer\n" + '\033[0m')
+            except IOError:
+                pass
+                
+            try:
+                data, _ = receive2.recvfrom(1500)
+                packet = TLPacket(tl_rc4_crypt(data))
+
+                print('\033[91m' + "-----> Computer to switch")
+                packet.print_summary()
+                print("<----- Computer to switch\n" + '\033[0m')
+            except IOError:
+                pass
 
 
-    if only_decrypt:
+    elif only_decrypt:
         decrypt_test_dot_raw()
     else:
         selected_switch = choose_switch(switch_ip_arg)
+
+        stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
+        present_port_statistics(stats)
 
         if selected_switch != None:
             token = tl_get_token(selected_switch.mac, selected_switch.ip4)
@@ -105,17 +142,16 @@ def main():
                     password = getpass('Password: ')
 
                     login_status = tl_login(selected_switch.mac, selected_switch.ip4,
-                                   token, username, password) == 7
+                                            token, username, password) == 7
                     if login_status == 1:
                         print('Wrong credentials\n')
                     elif login_status != 0:
-                        print('Login failed ({0:d})\n'.format(login_status))    
+                        print('Login failed ({0:d})\n'.format(login_status))
                     else:
                         print('Login successful\n')
                         logged_in = True
 
-                # stats = TLGetPortStatistics(selectedSwitch.MAC, selectedSwitch.IP, token)
-                # presentPortStatistics(stats)
+
                 for i in range(1, 9):
                     cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
                                                        token, i, username, password)

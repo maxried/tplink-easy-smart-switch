@@ -41,7 +41,7 @@ class TLPacket:
             body = decrypted[32:]
 
             self.tlvs = []
-            while len(body) > 0:
+            while len(body) > 1:
                 ntlv = TLV()
                 ntlv.tag = (body[0] << 8) + body[1]
                 ntlv.length = (body[2] << 8) + body[3]
@@ -51,17 +51,17 @@ class TLPacket:
 
     def print_summary(self):
         """Prints a human readable summary of the packet to stdout"""
-        print("Version:        " + str(self.version))
-        print("Opcode:         " + str(self.opcode))
-        print("MAC Switch:     " + "".join([format(b, "02X") for b in self.mac_switch]))
-        print("MAC Computer:   " + "".join([format(b, "02X") for b in self.mac_computer]))
+        print("Version:         " + str(self.version))
+        print("Opcode:          " + str(self.opcode))
+        print("MAC Switch:      " + "".join([format(b, "02X") for b in self.mac_switch]))
+        print("MAC Computer:    " + "".join([format(b, "02X") for b in self.mac_computer]))
         print("Sequence Number: " + str(self.sequence_number))
-        print("Error:          " + str(self.error_code))
-        print("Length:         " + str(self.length))
-        print("Fragment:       " + str(self.fragment))
-        print("Flags:          " + str(self.flags))
-        print("Token:          " + str(self.token))
-        print("Checksum:       " + str(self.checksum))
+        print("Error:           " + str(self.error_code))
+        print("Length:          " + str(self.length))
+        print("Fragment:        " + str(self.fragment))
+        print("Flags:           " + str(self.flags))
+        print("Token:           " + str(self.token))
+        print("Checksum:        " + str(self.checksum))
 
         for tlv in self.tlvs:
             print()

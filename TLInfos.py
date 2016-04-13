@@ -19,7 +19,7 @@ class PortStatistics:
     def __init__(self, packet):
         self.ports = []
 
-        for i in packet.TLVs:
+        for i in packet.tlvs:
             if i.tag == 16384 and len(i.value) == 19:
                 stat = PortStatisticsPort(
                     i.value[0],
