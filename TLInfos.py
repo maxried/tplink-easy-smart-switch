@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from TLTLVs import TLVTAGS
+
 """Toolbox to store the state of the switch"""
 
 class PortStatisticsPort:
@@ -20,7 +22,7 @@ class PortStatistics:
         self.ports = []
 
         for i in packet.tlvs:
-            if i.tag == 16384 and len(i.value) == 19:
+            if i.tag == TLVTAGS['MONITOR_PORT_STATISTICS'] and len(i.value) == 19:
                 stat = PortStatisticsPort(
                     i.value[0],
                     i.value[1] == 1,

@@ -13,6 +13,9 @@ from TLPresentation import extract_token_from_header, is_discovery
 
 class TLSwitch:
     """This is a switch"""
+
+    discovered_switches = []
+
     def __init__(self, packet):
         self.name = ''
         self.ip4 = ''
@@ -32,40 +35,57 @@ class TLSwitch:
 PORTCS = int.from_bytes(b'tp', 'big')
 PORTSC = PORTCS + 1
 BROADCAST_IP = '255.255.255.255'
+SENDER = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+RECEIVER = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-DISCOVERED_SWITCHES = []
+def tl_init_sockets():
+    SENDER.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    RECEIVER.bind(('0.0.0.0', PORTSC))
+    RECEIVER.setblocking(False)
+
+def tl_send_and_wait_for_response(outgoing_packet, target=BROADCAST_IP, timeout=1):
+    SENDER.sendto(tl_rc4_crypt(outgoing_packet.to_byte_array()), (target, PORTCS))
+
+    start = time.time()
+
+    while time.time() - start <= timeout:
+        try:
+            data, _ = RECEIVER.recvfrom(1500)
+            incoming_packet = TLPacket(tl_rc4_crypt(data))
+
+            if incoming_packet.sequence_number == outgoing_packet.sequence_number:
+                return incoming_packet
+
+        except IOError:
+            pass
+
+    return None
 
 
 def tl_discover(target=BROADCAST_IP, duration=1):
     """Do a survey or ask a specified switch for its identity"""
-    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    receive.bind(('0.0.0.0', PORTSC))
-    receive.setblocking(False)
-
     discovery_request = TLPacket(forge_discovery())
-    send.sendto(tl_rc4_crypt(discovery_request.to_byte_array()), (target, PORTCS))
+    SENDER.sendto(tl_rc4_crypt(discovery_request.to_byte_array()), (target, PORTCS))
 
     start = time.time()
 
     while time.time() - start <= duration:
         try:
-            data, _ = receive.recvfrom(1500)
+            data, _ = RECEIVER.recvfrom(1500)
             packet = TLPacket(tl_rc4_crypt(data))
 
             if is_discovery(discovery_request, packet):
                 found = False
                 this_one = TLSwitch(packet)
 
-                for i in DISCOVERED_SWITCHES:
+                for i in TLSwitch.discovered_switches:
                     if i.ip4 == this_one.ip4:
                         found = True
 
                 if not found:
                     #packet.printSummary()
                     #presentDiscovery(packet)
-                    DISCOVERED_SWITCHES.append(this_one)
+                    TLSwitch.discovered_switches.append(this_one)
                     if target != BROADCAST_IP:
                         return
         except IOError:
@@ -76,108 +96,25 @@ def tl_discover(target=BROADCAST_IP, duration=1):
 
 def tl_get_token(switchmac, switchip, timeout=1):
     """Retrieves a token used as a reference for a session. AKA session id."""
-    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    receive.bind(('0.0.0.0', PORTSC))
-    receive.setblocking(False)
-
     forged = TLPacket(forge_get_token(switchmac))
-    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
-
-    start = time.time()
-
-    while time.time() - start <= timeout:
-        try:
-            data, _ = receive.recvfrom(1500)
-            packet = TLPacket(tl_rc4_crypt(data))
-
-            if packet.sequence_number == forged.sequence_number:
-                return extract_token_from_header(packet)
-
-        except IOError:
-            pass
-
-    return None
+    result = tl_send_and_wait_for_response(forged, switchip, timeout)
+    return None if result is None else result.token
 
 
 def tl_login(switchmac, switchip, token, user, password, timeout=1):
     """Performs a login: Necessary for nearly every further action"""
-    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    receive.bind(('0.0.0.0', PORTSC))
-    receive.setblocking(False)
-
     forged = TLPacket(forge_login(switchmac, token, user, password))
-    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
+    result = tl_send_and_wait_for_response(forged, switchip, timeout)
 
-    start = time.time()
-
-    while time.time() - start <= timeout:
-        try:
-            data, _ = receive.recvfrom(1500)
-            packet = TLPacket(tl_rc4_crypt(data))
-
-            if packet.sequence_number == forged.sequence_number:
-                return packet.error_code
-
-        except IOError:
-            pass
-
-    return None
-
+    return None if result is None else result.error_code == 0
 
 def tl_get_port_statistics(switchmac, switchip, token, timeout=1):
     """Get the statistics for all PHYs"""
-    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    receive.bind(('0.0.0.0', PORTSC))
-    receive.setblocking(False)
-
     forged = TLPacket(forge_get_port_stats(switchmac, token))
-    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
-
-    start = time.time()
-
-    while time.time() - start <= timeout:
-        try:
-            data, _ = receive.recvfrom(1500)
-            packet = TLPacket(tl_rc4_crypt(data))
-
-            if packet.sequence_number == forged.sequence_number:
-                return packet
-
-        except IOError:
-            pass
-
-    return None
-
+    return tl_send_and_wait_for_response(forged, switchip, timeout)
 
 
 def tl_test_cable(switchmac, switchip, token, portnum, user, password, timeout=10):
     """Tests the cable attached to the switch"""
-    send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    send.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    receive.bind(('0.0.0.0', PORTSC))
-    receive.setblocking(False)
-
     forged = TLPacket(forge_cable_test(switchmac, token, portnum, user, password))
-    send.sendto(tl_rc4_crypt(forged.to_byte_array()), (switchip, PORTCS))
-
-    start = time.time()
-
-    while time.time() - start <= timeout:
-        try:
-            data, _ = receive.recvfrom(1500)
-            packet = TLPacket(tl_rc4_crypt(data))
-
-            if packet.sequence_number == forged.sequence_number:
-                return packet
-
-        except IOError:
-            pass
-
-    return None
+    return tl_send_and_wait_for_response(forged, switchip, timeout)

@@ -39,7 +39,7 @@ def end_tlv_list(packet):
 def forge_discovery():
     """Creates a discovery request."""
 
-    packet = forge_common_packet(0)
+    packet = forge_common_packet(TLPacket.OPCODES['DISCOVER'])
     end_tlv_list(packet)
 
     return packet.to_byte_array()
@@ -49,7 +49,7 @@ def forge_discovery():
 def forge_get_token(switch_mac):
     """Create a token request."""
 
-    packet = forge_common_packet(1, switch_mac)
+    packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac)
 
     tlv = TLV(TLVTAGS['SYS_GET_TOKEN'])
     packet.tlvs.append(tlv)
@@ -63,7 +63,7 @@ def forge_get_token(switch_mac):
 def forge_login(switch_mac, token, user, password):
     """Authorize with switch."""
 
-    packet = forge_common_packet(3, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['SET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
     tlv = TLV(TLVTAGS['SYSUSER_OLD_NAME'], user)
     packet.tlvs.append(tlv)
@@ -79,7 +79,7 @@ def forge_login(switch_mac, token, user, password):
 def forge_cable_test(switch_mac, token, portnum, user, password):
     """Issue a cable test quest."""
 
-    packet = forge_common_packet(3, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['SET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
 
     # Cable Diagnostics needs another authentication
@@ -108,7 +108,7 @@ def forge_cable_test(switch_mac, token, portnum, user, password):
 def forge_get_port_stats(switch_mac, token):
     """Gets PHY stats of all ports."""
 
-    packet = forge_common_packet(1, switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
     tlv = TLV(TLVTAGS['MONITOR_PORT_STATISTICS'])
     packet.tlvs.append(tlv)

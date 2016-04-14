@@ -5,11 +5,14 @@
 from TLTLVs import TLV
 
 class TLPacket:
+    OPCODES = {'DISCOVER': 0, 'GET': 1, 'SET': 3}
+    
+    
     """Class for TP-Link packet representation"""
     def __init__(self, decrypted=None):
         if decrypted is None:
-            self.version = 0
-            self.opcode = 0
+            self.version = 1
+            self.opcode = self.OPCODES['DISCOVER']
             self.mac_switch = b'\x00\x00\x00\x00\x00\x00'
             self.mac_computer = b'\x00\x00\x00\x00\x00\x00'
             self.sequence_number = 0
@@ -21,7 +24,7 @@ class TLPacket:
             self.checksum = 0
 
             self.tlvs = []
-        else:
+        elif len(decrypted) >= 32:
             self.version = decrypted[0]
             self.opcode = decrypted[1]
             self.mac_switch = bytes([decrypted[2], decrypted[3], decrypted[4],
@@ -41,12 +44,13 @@ class TLPacket:
             body = decrypted[32:]
 
             self.tlvs = []
-            while len(body) > 1:
+            while len(body) > 3:
                 ntlv = TLV()
                 ntlv.tag = (body[0] << 8) + body[1]
                 ntlv.length = (body[2] << 8) + body[3]
                 ntlv.value = body[4:ntlv.length + 4]
-                body = body[ntlv.length + 4:]
+                if len(body) >= ntlv.length + 4:
+                    body = body[ntlv.length + 4:]
                 self.tlvs.append(ntlv)
 
     def print_summary(self):
@@ -70,7 +74,7 @@ class TLPacket:
             print("Value: " + tlv.get_human_readable_value())
 
     def to_byte_array(self):
-        """Serialize the packet described by this instance to bytearray to send it to the switch^"""
+        """Serialize the packet described by this instance to bytearray to send it to the switch"""
         header = bytearray()
         body = bytearray()
 

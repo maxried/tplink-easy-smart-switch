@@ -12,7 +12,8 @@ from TLPresentation import present_discovery, present_cable_test, present_port_s
 from TLPacket import TLPacket
 from TLCrypt import tl_rc4_crypt
 #from TLPacketForge import *
-from TLActions import tl_test_cable, tl_discover, DISCOVERED_SWITCHES, tl_get_token, tl_login, tl_get_port_statistics, PORTSC, PORTCS
+from TLActions import tl_test_cable, tl_discover, TLSwitch, tl_get_token,\
+    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets
 
 def choose_switch(switch_ip_arg):
     """Discover switches, list details and display selection prompt."""
@@ -23,10 +24,10 @@ def choose_switch(switch_ip_arg):
     else:
         tl_discover()
 
-    if len(DISCOVERED_SWITCHES) > 1:
+    if len(TLSwitch.discovered_switches) > 1:
         print(' {0:2s}{1:31s} {2:15s} {3:31s} {4:10s}'
               .format('#', 'Name', 'IP', 'Model', 'Firmware'))
-        for i, switch in enumerate(DISCOVERED_SWITCHES):
+        for i, switch in enumerate(TLSwitch.discovered_switches):
             print('{0:2d} '.format(i), end='')
             present_discovery(switch.source_packet)
 
@@ -34,15 +35,15 @@ def choose_switch(switch_ip_arg):
         while selection is None:
             selection_raw = input('Select switch: ')
             if (selection_raw.isnumeric() and
-                    int(selection_raw) in range(0, len(DISCOVERED_SWITCHES))):
+                    int(selection_raw) in range(0, len(TLSwitch.discovered_switches))):
                 selection = int(selection_raw)
 
-        selected_switch = DISCOVERED_SWITCHES[selection]
-    elif len(DISCOVERED_SWITCHES) == 1:
+        selected_switch = TLSwitch.discovered_switches[selection]
+    elif len(TLSwitch.discovered_switches) == 1:
         print('{0:31s} {1:15s} {2:31s} {3:10s}'
               .format('Name', 'IP', 'Model', 'Firmware'))
-        present_discovery(DISCOVERED_SWITCHES[0].source_packet)
-        selected_switch = DISCOVERED_SWITCHES[0]
+        present_discovery(TLSwitch.discovered_switches[0].source_packet)
+        selected_switch = TLSwitch.discovered_switches[0]
         print()
     else:
         print('No switches discovered.')
@@ -71,7 +72,7 @@ def decrypt_test_dot_raw():
 
 
 def main():
-    """The main method."""
+    """The main method."""    
     try:
         opts, _ = getopt.getopt(argv[1:], 'ldi:')
     except getopt.GetoptError:
@@ -112,7 +113,7 @@ def main():
                 print("<----- Switch to computer\n" + '\033[0m')
             except IOError:
                 pass
-                
+
             try:
                 data, _ = receive2.recvfrom(1500)
                 packet = TLPacket(tl_rc4_crypt(data))
@@ -127,6 +128,7 @@ def main():
     elif only_decrypt:
         decrypt_test_dot_raw()
     else:
+        tl_init_sockets()
         selected_switch = choose_switch(switch_ip_arg)
 
         stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
