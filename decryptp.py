@@ -8,12 +8,12 @@ from sys import argv
 from getpass import getpass
 import socket
 
-from TLPresentation import present_discovery, present_cable_test, present_port_statistics
+from TLPresentation import present_discovery, present_cable_test, present_port_statistics, present_qos
 from TLPacket import TLPacket
 from TLCrypt import tl_rc4_crypt
 #from TLPacketForge import *
 from TLActions import tl_test_cable, tl_discover, TLSwitch, tl_get_token,\
-    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets
+    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets, tl_get_qos
 
 def choose_switch(switch_ip_arg):
     """Discover switches, list details and display selection prompt."""
@@ -131,8 +131,8 @@ def main():
         tl_init_sockets()
         selected_switch = choose_switch(switch_ip_arg)
 
-        stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
-        present_port_statistics(stats)
+        # stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
+        # present_port_statistics(stats)
 
         if selected_switch != None:
             token = tl_get_token(selected_switch.mac, selected_switch.ip4)
@@ -154,10 +154,14 @@ def main():
                         logged_in = True
 
 
-                for i in range(1, 9):
-                    cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
-                                                       token, i, username, password)
-                    present_cable_test(cable_test_results)
+                qos = tl_get_qos(selected_switch.mac, selected_switch.ip4, token)
+                if qos != None:
+                    present_qos(qos)
+
+                # for i in range(1, 9):
+                #     cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
+                #                                        token, i, username, password)
+                #     present_cable_test(cable_test_results)
 
 
 if __name__ == '__main__':

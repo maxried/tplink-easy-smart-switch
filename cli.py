@@ -2,26 +2,28 @@
 
 import readline
 
+CURRENT_CONFIG_INTERFACE = None
+CURRENT_MENU = ('null', 'null', [])
+NAME = 'coreswitch'
+
 def __menu__main__interface(param):
-    global currentConfigInterface
+    global CURRENT_CONFIG_INTERFACE
     if param.strip().isnumeric():
-        currentConfigInterface = int(param)
-        setMenu('inter', '$name$-int-' + str(currentConfigInterface) + '>')
+        CURRENT_CONFIG_INTERFACE = int(param)
+        set_menu('inter', '$name$-int-' + str(CURRENT_CONFIG_INTERFACE) + '>')
     else:
         print("Usage is interface <num>.")
 
-def __menu__inter__shutdown(param):
-    global currentConfigInterface
-    print("Shutting down interface " + str(currentConfigInterface))
+def __menu__inter__tdr(_):
+    print("Running TDR on " + str(CURRENT_CONFIG_INTERFACE))
 
-def __menu__main__exit(param):
+def __menu__main__exit(_):
     quit()
 
-def __menu__inter__exit(params):
-    setMenu('main', '$name$> ')
+def __menu__inter__exit(_):
+    set_menu('main', '$name$> ')
 
-def getPossibleCompletions(menu, enteredcmd):
-    global CurrentMenu
+def get_possible_completions(menu, enteredcmd):
     candidates = []
     menu = menu[2]
 
@@ -37,27 +39,24 @@ def getPossibleCompletions(menu, enteredcmd):
     return candidates
 
 
-def readlineMenuCompleter(text, state):
-    global CurrentMenu
-    candidates = getPossibleCompletions(CurrentMenu, text)
+def readline_menu_completer(text, state):
+    candidates = get_possible_completions(CURRENT_MENU, text)
     return candidates[state] if state < len(candidates) else None
 
 
 readline.parse_and_bind("tab: complete")
 readline.parse_and_bind("?: complete")
-readline.set_completer(readlineMenuCompleter)
-Name = 'coreswitch'
+readline.set_completer(readline_menu_completer)
 
-def runCommand(menu, cmd):
-    global CurrentMenu
-    candidates = getPossibleCompletions(menu, cmd)
+def run_command(menu, cmd):
+    candidates = get_possible_completions(menu, cmd)
 
     if len(candidates) == 0:
         print('No such command.')
     elif len(candidates) > 1:
         print('Possible commands:\n' + ', '.join(candidates))
     else:
-        function = globals().get('__menu__' + CurrentMenu[0] + "__" + candidates[0], None)
+        function = globals().get('__menu__' + CURRENT_MENU[0] + "__" + candidates[0], None)
         if function != None:
             params = cmd.partition(' ')[2]
             function(params)
@@ -65,10 +64,9 @@ def runCommand(menu, cmd):
             print('Not implemented.')
 
 
-def setMenu(menu, ps0 = None):
-    global CurrentMenu
-
-    ps0 = ps0 if ps0 != None else menu
+def set_menu(menu, prompt=None):
+    global CURRENT_MENU
+    prompt = prompt if prompt != None else menu
 
     entries = []
 
@@ -76,22 +74,21 @@ def setMenu(menu, ps0 = None):
         if i.startswith('__menu__' + menu + '__'):
             entries.append(i[10 + len(menu):])
 
-    CurrentMenu = (menu, ps0, entries)
+    CURRENT_MENU = (menu, prompt, entries)
 
-def PS0():
-    global CurrentMenu
-    return CurrentMenu[1].replace('$name$', Name)
+def ps0():
+    return CURRENT_MENU[1].replace('$name$', NAME)
 
 def main():
-    setMenu('main', '$name$> ')
+    set_menu('main', '$name$> ')
 
     while True:
         command = ''
-        
+
         while command.strip() == '':
-            command = input(PS0())
-        
-        runCommand(CurrentMenu, command)
+            command = input(ps0())
+
+        run_command(CURRENT_MENU, command)
 
 
 if __name__ == "__main__":

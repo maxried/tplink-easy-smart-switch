@@ -46,3 +46,13 @@ def present_cable_test(packet):
             print('Port {0:2d}: Length {1:3d}m, Diagnosis: {2:14s}'
                   .format(i.value[0], i.value[5],
                           possible_test_results.get(i.value[1], 'unknown')))
+
+def present_qos(packet):
+    possible_qos_modes = {0: 'lowest', 1: 'normal', 2: 'medium', 3: 'highest'}
+
+    print('{0:2s} {1:8s}'.format('#', 'Priority'))
+
+    for tlv in packet.tlvs:
+        if tlv.tag == TLVTAGS['QOS_BASIC_PRIORITY'] and len(tlv.value) == 2:
+            print('{0:2d} {1:8s}'
+                  .format(tlv.value[0], possible_qos_modes.get(tlv.value[1], 'unknown')))

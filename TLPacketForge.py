@@ -116,3 +116,17 @@ def forge_get_port_stats(switch_mac, token):
     end_tlv_list(packet)
 
     return packet.to_byte_array()
+
+
+
+def forge_get_qos(switch_mac, token):
+    """Gets PHY stats of all ports."""
+
+    packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+
+    tlv = TLV(TLVTAGS['QOS_BASIC_PRIORITY'])
+    packet.tlvs.append(tlv)
+
+    end_tlv_list(packet)
+
+    return packet.to_byte_array()

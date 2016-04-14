@@ -7,9 +7,9 @@ import socket
 
 from TLCrypt import tl_rc4_crypt
 from TLPacketForge import forge_cable_test, forge_discovery,\
-                          forge_get_token, forge_login, forge_get_port_stats
+                          forge_get_token, forge_login, forge_get_port_stats, forge_get_qos
 from TLPacket import TLPacket
-from TLPresentation import extract_token_from_header, is_discovery
+from TLPresentation import is_discovery
 
 class TLSwitch:
     """This is a switch"""
@@ -118,3 +118,8 @@ def tl_test_cable(switchmac, switchip, token, portnum, user, password, timeout=1
     """Tests the cable attached to the switch"""
     forged = TLPacket(forge_cable_test(switchmac, token, portnum, user, password))
     return tl_send_and_wait_for_response(forged, switchip, timeout)
+
+def tl_get_qos(switchmac, switchip, token, timeout=1):
+    forged = TLPacket(forge_get_qos(switchmac, token))
+    result = tl_send_and_wait_for_response(forged, switchip, timeout)
+    return result
