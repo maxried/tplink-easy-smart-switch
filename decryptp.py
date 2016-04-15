@@ -11,9 +11,9 @@ import socket
 from TLPresentation import present_discovery, present_cable_test, present_port_statistics, present_qos
 from TLPacket import TLPacket
 from TLCrypt import tl_rc4_crypt
-#from TLPacketForge import *
+from TLPacketForge import forge_question
 from TLActions import tl_test_cable, tl_discover, TLSwitch, tl_get_token,\
-    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets, tl_get_qos
+    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets, tl_get_qos, tl_send_and_wait_for_response
 
 def choose_switch(switch_ip_arg):
     """Discover switches, list details and display selection prompt."""
@@ -154,9 +154,18 @@ def main():
                         logged_in = True
 
 
-                qos = tl_get_qos(selected_switch.mac, selected_switch.ip4, token)
-                if qos != None:
-                    present_qos(qos)
+                
+                for i in range(0, 256):
+                    quest = TLPacket(forge_question(selected_switch.mac, token, i))
+                    quest.opcode = 0
+                    answer = tl_send_and_wait_for_response(quest, selected_switch.ip4, .3)
+                    if answer is not None and answer.error_code != 0:
+                        print('\033[91m' + "-----> Computer to switch")
+                        quest.print_summary()
+                        print("<----- Computer to switch\n" + '\033[0m')
+                        print('\033[94m' + "-----> Switch to computer")
+                        print(answer.print_summary() if answer != None else "No answer received.")
+                        print("<----- Switch to computer\n" + '\033[0m')
 
                 # for i in range(1, 9):
                 #     cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,

@@ -39,11 +39,13 @@ SENDER = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 RECEIVER = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 def tl_init_sockets():
+    """Initialize sockets and bind to port."""
     SENDER.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     RECEIVER.bind(('0.0.0.0', PORTSC))
     RECEIVER.setblocking(False)
 
 def tl_send_and_wait_for_response(outgoing_packet, target=BROADCAST_IP, timeout=1):
+    """Sends packet and returns the answer, if any."""
     SENDER.sendto(tl_rc4_crypt(outgoing_packet.to_byte_array()), (target, PORTCS))
 
     start = time.time()
