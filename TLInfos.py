@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 
+from struct import unpack
+
 from TLTLVs import TLVTAGS
 
 """Toolbox to store the state of the switch"""
 
 class PortStatisticsPort:
     """Stats of a single port"""
-    def __init__(self, portnumber, enabled, mode, tg, tb, rg, rb):
-        self.number = portnumber
-        self.enabled = enabled
-        self.current_mode = mode
-        self.rx_good = rg
-        self.rx_bad = rb
-        self.tx_good = tg
-        self.tx_bad = tb
+    def __init__(self, portstat):
+        self.number = portstat[0]
+        self.enabled = portstat[1]
+        self.current_mode = portstat[2]
+        self.tx_good = portstat[3]
+        self.tx_bad = portstat[4]
+        self.rx_good = portstat[5]
+        self.rx_bad = portstat[6]
 
 
 class PortStatistics:
@@ -23,15 +25,7 @@ class PortStatistics:
 
         for i in packet.tlvs:
             if i.tag == TLVTAGS['MONITOR_PORT_STATISTICS'] and len(i.value) == 19:
-                stat = PortStatisticsPort(
-                    i.value[0],
-                    i.value[1] == 1,
-                    i.value[2],
-                    (i.value[3] << 24) + (i.value[4] << 16) + (i.value[5] << 8) + i.value[6],
-                    (i.value[7] << 24) + (i.value[8] << 16) + (i.value[9] << 8) + i.value[10],
-                    (i.value[11] << 24) + (i.value[12] << 16) + (i.value[13] << 8) + i.value[14],
-                    (i.value[15] << 24) + (i.value[16] << 16) + (i.value[17] << 8) + i.value[18])
-
+                stat = PortStatisticsPort(unpack('>B?BIIII', i.value))
                 self.ports.append(stat)
 
     def print_ports(self):

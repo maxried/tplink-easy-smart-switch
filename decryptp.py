@@ -67,7 +67,7 @@ def decrypt_test_dot_raw():
     with open('test2.dec', 'wb') as outfile:
         outfile.write(packet.to_byte_array())
 
-    packet.print_summary()
+    print(packet)
 
 
 
@@ -109,7 +109,7 @@ def main():
                 packet = TLPacket(tl_rc4_crypt(data))
 
                 print('\033[94m' + "-----> Switch to computer")
-                packet.print_summary()
+                print(packet)
                 print("<----- Switch to computer\n" + '\033[0m')
             except IOError:
                 pass
@@ -119,7 +119,7 @@ def main():
                 packet = TLPacket(tl_rc4_crypt(data))
 
                 print('\033[91m' + "-----> Computer to switch")
-                packet.print_summary()
+                print(packet)
                 print("<----- Computer to switch\n" + '\033[0m')
             except IOError:
                 pass
@@ -131,8 +131,8 @@ def main():
         tl_init_sockets()
         selected_switch = choose_switch(switch_ip_arg)
 
-        # stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
-        # present_port_statistics(stats)
+        stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
+        present_port_statistics(stats)
 
         if selected_switch != None:
             token = tl_get_token(selected_switch.mac, selected_switch.ip4)
@@ -153,24 +153,24 @@ def main():
                         print('Login successful\n')
                         logged_in = True
 
+                #
+                #
+                # for i in range(0, 256):
+                #     quest = TLPacket(forge_question(selected_switch.mac, token, i))
+                #     quest.opcode = 0
+                #     answer = tl_send_and_wait_for_response(quest, selected_switch.ip4, .3)
+                #     if answer is not None and answer.error_code != 0:
+                #         print('\033[91m' + "-----> Computer to switch")
+                #         print(quest)
+                #         print("<----- Computer to switch\n" + '\033[0m')
+                #         print('\033[94m' + "-----> Switch to computer")
+                #         answer.print_summary() if answer != None
+                #         print("<----- Switch to computer\n" + '\033[0m')
 
-                
-                for i in range(0, 256):
-                    quest = TLPacket(forge_question(selected_switch.mac, token, i))
-                    quest.opcode = 0
-                    answer = tl_send_and_wait_for_response(quest, selected_switch.ip4, .3)
-                    if answer is not None and answer.error_code != 0:
-                        print('\033[91m' + "-----> Computer to switch")
-                        quest.print_summary()
-                        print("<----- Computer to switch\n" + '\033[0m')
-                        print('\033[94m' + "-----> Switch to computer")
-                        print(answer.print_summary() if answer != None else "No answer received.")
-                        print("<----- Switch to computer\n" + '\033[0m')
-
-                # for i in range(1, 9):
-                #     cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
-                #                                        token, i, username, password)
-                #     present_cable_test(cable_test_results)
+                for i in range(1, 9):
+                    cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
+                                                       token, i, username, password)
+                    present_cable_test(cable_test_results)
 
 
 if __name__ == '__main__':

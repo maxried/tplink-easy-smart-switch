@@ -2,13 +2,14 @@
 
 """TP-Link packet parser"""
 
+from struct import unpack
 from TLTLVs import TLV
 
 class TLPacket:
-    OPCODES = {'DISCOVER': 0, 'GET': 1, 'SET': 3}
-    
-    
     """Class for TP-Link packet representation"""
+
+    OPCODES = {'DISCOVER': 0, 'GET': 1, 'SET': 3}
+
     def __init__(self, decrypted=None):
         if decrypted is None:
             self.version = 1
@@ -25,53 +26,45 @@ class TLPacket:
 
             self.tlvs = []
         elif len(decrypted) >= 32:
-            self.version = decrypted[0]
-            self.opcode = decrypted[1]
-            self.mac_switch = bytes([decrypted[2], decrypted[3], decrypted[4],
-                                     decrypted[5], decrypted[6], decrypted[7]])
-            self.mac_computer = bytes([decrypted[8], decrypted[9], decrypted[10],
-                                       decrypted[11], decrypted[12], decrypted[13]])
-            self.sequence_number = (decrypted[14] << 8) + decrypted[15]
-            self.error_code = ((decrypted[16] << 24) + (decrypted[17] << 16) +
-                               (decrypted[18] << 8) + decrypted[19])
-            self.length = (decrypted[20] << 8) + decrypted[21]
-            self.fragment = (decrypted[22] << 8) + decrypted[23]
-            self.flags = (decrypted[24] << 8) + decrypted[25]
-            self.token = (decrypted[26] << 8) + decrypted[27]
-            self.checksum = ((decrypted[28] << 24) + (decrypted[29] << 16) +
-                             (decrypted[30] << 8) + decrypted[31])
+            (self.version, self.opcode, self.mac_switch,
+             self.mac_computer, self.sequence_number,
+             self.error_code, self.length, self.fragment,
+             self.flags, self.token, self.checksum) = unpack('>BB6s6sHIHHHHI', decrypted[:32])
 
             body = decrypted[32:]
 
             self.tlvs = []
             while len(body) > 3:
                 ntlv = TLV()
-                ntlv.tag = (body[0] << 8) + body[1]
-                ntlv.length = (body[2] << 8) + body[3]
-                ntlv.value = body[4:ntlv.length + 4]
+                ntlv.tag, ntlv.length = unpack('>HH', body[:4])
                 if len(body) >= ntlv.length + 4:
+                    ntlv.value = body[4:ntlv.length + 4]
                     body = body[ntlv.length + 4:]
+
                 self.tlvs.append(ntlv)
 
-    def print_summary(self):
+    def __str__(self):
         """Prints a human readable summary of the packet to stdout"""
-        print("Version:         " + str(self.version))
-        print("Opcode:          " + str(self.opcode))
-        print("MAC Switch:      " + "".join([format(b, "02X") for b in self.mac_switch]))
-        print("MAC Computer:    " + "".join([format(b, "02X") for b in self.mac_computer]))
-        print("Sequence Number: " + str(self.sequence_number))
-        print("Error:           " + str(self.error_code))
-        print("Length:          " + str(self.length))
-        print("Fragment:        " + str(self.fragment))
-        print("Flags:           " + str(self.flags))
-        print("Token:           " + str(self.token))
-        print("Checksum:        " + str(self.checksum))
+        result = ''
+        result += 'Version:         ' + str(self.version) + '\n'
+        result += 'Opcode:          ' + str(self.opcode) + '\n'
+        result += 'MAC Switch:      ' + ''.join([format(b, '02X') for b in self.mac_switch]) + '\n'
+        result += 'MAC Computer:    ' + ''.join([format(b, '02X') for b in self.mac_computer]) + '\n'
+        result += 'Sequence Number: ' + str(self.sequence_number) + '\n'
+        result += 'Error:           ' + str(self.error_code) + '\n'
+        result += 'Length:          ' + str(self.length) + '\n'
+        result += 'Fragment:        ' + str(self.fragment) + '\n'
+        result += 'Flags:           ' + str(self.flags) + '\n'
+        result += 'Token:           ' + str(self.token) + '\n'
+        result += 'Checksum:        ' + str(self.checksum) + '\n'
 
         for tlv in self.tlvs:
-            print()
-            print("Tag " + str(tlv.tag) + " (" + tlv.get_human_readable_tag() + ")")
-            print("Length " + str(tlv.length))
-            print("Value: " + tlv.get_human_readable_value())
+            result += '\n'
+            result += 'Tag ' + str(tlv.tag) + ' (' + tlv.get_human_readable_tag() + ')' + '\n'
+            result += 'Length ' + str(tlv.length) + '\n'
+            result += 'Value: ' + tlv.get_human_readable_value() + '\n'
+
+        return result
 
     def to_byte_array(self):
         """Serialize the packet described by this instance to bytearray to send it to the switch"""

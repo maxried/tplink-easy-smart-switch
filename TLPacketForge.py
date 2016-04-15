@@ -3,6 +3,7 @@
 """Module to create common packets understood and used by TP-Link software and firmware"""
 
 from random import randint
+from struct import pack
 
 from TLPacket import TLPacket
 from TLTLVs import TLV, TLVTAGS
@@ -90,14 +91,8 @@ def forge_cable_test(switch_mac, token, portnum, user, password):
     packet.tlvs.append(tlv)
 
     # First byte is port number, second is 0x01, no clue why.
-    payload = bytearray()
-    payload.append(portnum & 0xFF)
-    payload.append(0x01)
-    payload.append(0x00)
-    payload.append(0x00)
-    payload.append(0x00)
-    payload.append(0x00)
-    tlv = TLV(TLVTAGS['MONITOR_CABLE_TEST'], bytes(payload))
+    payload = pack('>6B', portnum, 1, 0, 0, 0, 0)
+    tlv = TLV(TLVTAGS['MONITOR_CABLE_TEST'], payload)
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
