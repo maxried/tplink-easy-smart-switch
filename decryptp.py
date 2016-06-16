@@ -11,11 +11,12 @@ import socket
 from TLPresentation import present_discovery, present_cable_test, present_port_statistics, present_qos
 from TLPacket import TLPacket
 from TLCrypt import tl_rc4_crypt
-from TLPacketForge import forge_question
+from TLPacketForge import forge_question, forge_common_packet, end_tlv_list
 from TLActions import tl_test_cable, tl_discover, TLSwitch, tl_get_token,\
     tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets, tl_get_qos, tl_send_and_wait_for_response
+from TLTLVs import TLV
 
-def choose_switch(switch_ip_arg):
+def choose_switch(switch_ip_arg=None):
     """Discover switches, list details and display selection prompt."""
     if switch_ip_arg != None:
         print('Only trying ' + switch_ip_arg)
@@ -144,7 +145,7 @@ def main():
                     password = getpass('Password: ')
 
                     login_status = tl_login(selected_switch.mac, selected_switch.ip4,
-                                            token, username, password) == 7
+                                            token, username, b'\xff' * (8000)) == 7
                     if login_status == 1:
                         print('Wrong credentials\n')
                     elif login_status != 0:
@@ -152,26 +153,7 @@ def main():
                     else:
                         print('Login successful\n')
                         logged_in = True
-
-                #
-                #
-                # for i in range(0, 256):
-                #     quest = TLPacket(forge_question(selected_switch.mac, token, i))
-                #     quest.opcode = 0
-                #     answer = tl_send_and_wait_for_response(quest, selected_switch.ip4, .3)
-                #     if answer is not None and answer.error_code != 0:
-                #         print('\033[91m' + "-----> Computer to switch")
-                #         print(quest)
-                #         print("<----- Computer to switch\n" + '\033[0m')
-                #         print('\033[94m' + "-----> Switch to computer")
-                #         answer.print_summary() if answer != None
-                #         print("<----- Switch to computer\n" + '\033[0m')
-
-                for i in range(1, 9):
-                    cable_test_results = tl_test_cable(selected_switch.mac, selected_switch.ip4,
-                                                       token, i, username, password)
-                    present_cable_test(cable_test_results)
-
+                
 
 if __name__ == '__main__':
     main()

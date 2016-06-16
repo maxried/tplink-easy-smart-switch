@@ -64,7 +64,8 @@ def forge_get_token(switch_mac):
 def forge_login(switch_mac, token, user, password):
     """Authorize with switch."""
 
-    packet = forge_common_packet(TLPacket.OPCODES['SET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['SET'],
+                                 switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
     tlv = TLV(TLVTAGS['SYSUSER_OLD_NAME'], user)
     packet.tlvs.append(tlv)
@@ -77,10 +78,12 @@ def forge_login(switch_mac, token, user, password):
     return packet.to_byte_array()
 
 
+
 def forge_cable_test(switch_mac, token, portnum, user, password):
     """Issue a cable test quest."""
 
-    packet = forge_common_packet(TLPacket.OPCODES['SET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['SET'],
+                                 switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
 
     # Cable Diagnostics needs another authentication
@@ -100,10 +103,12 @@ def forge_cable_test(switch_mac, token, portnum, user, password):
     return packet.to_byte_array()
 
 
+
 def forge_get_port_stats(switch_mac, token):
     """Gets PHY stats of all ports."""
 
-    packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['GET'],
+                                 switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
     tlv = TLV(TLVTAGS['MONITOR_PORT_STATISTICS'])
     packet.tlvs.append(tlv)
@@ -117,7 +122,8 @@ def forge_get_port_stats(switch_mac, token):
 def forge_get_qos(switch_mac, token):
     """Gets PHY stats of all ports."""
 
-    packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['GET'],
+                                 switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
     tlv = TLV(TLVTAGS['QOS_BASIC_PRIORITY'])
     packet.tlvs.append(tlv)
@@ -127,10 +133,12 @@ def forge_get_qos(switch_mac, token):
     return packet.to_byte_array()
 
 
+
 def forge_question(switch_mac, token, tag):
     """Gets PHY stats of all ports."""
 
-    packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
+    packet = forge_common_packet(TLPacket.OPCODES['GET'],
+                                 switch_mac, b'\x00\x00\x00\x00\x00\x00', token)
 
     tlv = TLV(tag)
     packet.tlvs.append(tlv)

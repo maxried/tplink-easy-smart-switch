@@ -32,8 +32,8 @@ class TLSwitch:
                 self.mac = i.value
 
 
-PORTCS = int.from_bytes(b'tp', 'big')
-PORTSC = PORTCS + 1
+PORTCS = int.from_bytes(b'tp', 'big') # 29808
+PORTSC = PORTCS + 1 # 29809
 BROADCAST_IP = '255.255.255.255'
 SENDER = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 RECEIVER = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -85,8 +85,6 @@ def tl_discover(target=BROADCAST_IP, duration=1):
                         found = True
 
                 if not found:
-                    #packet.printSummary()
-                    #presentDiscovery(packet)
                     TLSwitch.discovered_switches.append(this_one)
                     if target != BROADCAST_IP:
                         return
@@ -108,7 +106,8 @@ def tl_login(switchmac, switchip, token, user, password, timeout=1):
     forged = TLPacket(forge_login(switchmac, token, user, password))
     result = tl_send_and_wait_for_response(forged, switchip, timeout)
 
-    return None if result is None else result.error_code == 0
+    return None if result is None else result.error_code
+
 
 def tl_get_port_statistics(switchmac, switchip, token, timeout=1):
     """Get the statistics for all PHYs"""

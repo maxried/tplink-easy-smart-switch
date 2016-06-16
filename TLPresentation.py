@@ -46,6 +46,7 @@ def present_cable_test(packet):
             print('Port {0:2d}: Length {1:3d}m, Diagnosis: {2:14s}'
                   .format(i.value[0], i.value[5],
                           possible_test_results.get(i.value[1], 'unknown')))
+    print(packet.error_code)
 
 def present_qos(packet):
     possible_qos_modes = {0: 'lowest', 1: 'normal', 2: 'medium', 3: 'highest'}
