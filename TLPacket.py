@@ -12,7 +12,7 @@ class TLPacket:
 
     OPCODES = {'DISCOVER': 0, 'GET': 1, 'SET': 3}  # type: Dict[str, int]
 
-    def __init__(self, decrypted: bytes=None):
+    def __init__(self, decrypted: bytes = None):
         if decrypted is None:
             self.version = 1  # type: int
             self.opcode = self.OPCODES['DISCOVER']  # type: int
@@ -47,24 +47,34 @@ class TLPacket:
 
     def __str__(self) -> str:
         """Prints a human readable summary of the packet to stdout"""
-        result = ''  # type: str
-        result += 'Version:         {0}\n'.format(str(self.version))
-        result += 'Opcode:          {0}\n'.format(str(self.opcode))
-        result += 'MAC Switch:      {0}\n'.format(''.join([format(b, '02X') for b in self.mac_switch]))
-        result += 'MAC Computer:    {0}\n'.format(''.join([format(b, '02X') for b in self.mac_computer]))
-        result += 'Sequence Number: {0}\n'.format(str(self.sequence_number))
-        result += 'Error:           {0}\n'.format(str(self.error_code))
-        result += 'Length:          {0}\n'.format(str(self.length))
-        result += 'Fragment:        {0}\n'.format(str(self.fragment))
-        result += 'Flags:           {0}\n'.format(str(self.flags))
-        result += 'Token:           {0}\n'.format(str(self.token))
-        result += 'Checksum:        {0}\n'.format(str(self.checksum))
+        result = ('Version:         {0}\n'
+                  'Opcode:          {1}\n'
+                  'MAC Switch:      {2}\n'
+                  'MAC Computer:    {3}\n'
+                  'Sequence Number: {4}\n'
+                  'Error:           {5}\n'
+                  'Length:          {6}\n'
+                  'Fragment:        {7}\n'
+                  'Flags:           {8}\n'
+                  'Token:           {9}\n'
+                  'Checksum:        {10}\n'.format(
+                      str(self.version),
+                      str(self.opcode),
+                      ''.join([format(b, '02X') for b in self.mac_switch]),
+                      ''.join([format(b, '02X') for b in self.mac_computer]),
+                      str(self.sequence_number),
+                      str(self.error_code),
+                      str(self.length),
+                      str(self.fragment),
+                      str(self.fragment),
+                      str(self.flags),
+                      str(self.token),
+                      str(self.checksum)))
 
         for tlv in self.tlvs:  # type: TLV
-            result += '\n'
-            result += 'Tag ' + str(tlv.tag) + ' (' + tlv.get_human_readable_tag() + ')' + '\n'
-            result += 'Length ' + str(tlv.length) + '\n'
-            result += 'Value: ' + tlv.get_human_readable_value() + '\n'
+            result += '\nTag {0} ({1})\nLength {2}\nValue: {3}\n'.format(str(tlv.tag), tlv.get_human_readable_tag(),
+        str(tlv.length),
+        tlv.get_human_readable_value())
 
         return result
 
