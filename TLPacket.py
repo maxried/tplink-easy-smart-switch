@@ -46,7 +46,7 @@ class TLPacket:
                 self.tlvs.append(ntlv)
 
     def __str__(self) -> str:
-        """Prints a human readable summary of the packet to stdout"""
+        """Converts TLPacket to human readable summary."""
         result = ('Version:         {0}\n'
                   'Opcode:          {1}\n'
                   'MAC Switch:      {2}\n'
@@ -66,15 +66,14 @@ class TLPacket:
                       str(self.error_code),
                       str(self.length),
                       str(self.fragment),
-                      str(self.fragment),
                       str(self.flags),
                       str(self.token),
                       str(self.checksum)))
 
         for tlv in self.tlvs:  # type: TLV
             result += '\nTag {0} ({1})\nLength {2}\nValue: {3}\n'.format(str(tlv.tag), tlv.get_human_readable_tag(),
-        str(tlv.length),
-        tlv.get_human_readable_value())
+                                                                         str(tlv.length),
+                                                                         tlv.get_human_readable_value())
 
         return result
 
