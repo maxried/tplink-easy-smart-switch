@@ -131,6 +131,9 @@ def main():
 
             logged_in = False
             if token is not None:
+                username = ''  # type: str
+                password = ''  # type: str
+
                 while not logged_in:
                     username = input('User: ')
                     password = getpass('Password: ')
