@@ -2,7 +2,10 @@
 
 """Offers help for parsing Tag-Length-Values."""
 
-_TLVDEFINITIONS = {
+from typing import Tuple, Dict, List
+
+
+_TLVDEFINITIONS = [
     (1, 'SYSINFO_PRODUCT_MODEL', 'STRING'),
     (2, 'SYSINFO_DESCRIPTION', 'STRING'),
     (3, 'SYSINFO_MAC', 'MAC'),
@@ -61,23 +64,26 @@ _TLVDEFINITIONS = {
     (16896, 'MONITOR_CABLE_TEST', ''),
     (17152, 'MONITOR_LOOP_PREVENTION', 'BOOLEAN'),
     (65535, 'EOT', 'NULL')
-    }
+]  # type: List[Tuple[int, str, str]]
 
-TLVTYPES = {numeric: representation for (numeric, _, representation) in _TLVDEFINITIONS}
-TLVNAMES = {numeric: readable for (numeric, readable, _) in _TLVDEFINITIONS}
-TLVTAGS = {readable: numeric for (numeric, readable, _) in _TLVDEFINITIONS}
+TLVTYPES = {numeric: representation for (numeric, readable, representation) in _TLVDEFINITIONS}  # type: Dict[int, str]
+TLVNAMES = {numeric: readable for (numeric, readable, representation) in _TLVDEFINITIONS}  # type: Dict[int, str]
+TLVTAGS = {readable: numeric for (numeric, readable, representation) in _TLVDEFINITIONS}  # type: Dict[str, int]
 
 
 class TLV:
-    """This is a Tag-Length-Value combination as used to comunicate with the switches."""
+    """This is a Tag-Length-Value combination as used to communicate with the switches."""
 
-    def __init__(self, tag=None, val=None):
-        self.tag = 0 if tag is None else tag
+    def __init__(self, tag: int=None, val: any=None):
+        self.value = ...  # type: any
+        self.length = ...  # type: int
+        self.tag = 0 if tag is None else tag  # type: int
+
         self.set_value(val)
 
-    def set_value(self, val):
+    def set_value(self, val: bytes) -> None:
         """Sets the value of the TLV to val by trying to do
-        a proper conversion and sets the correct length."""
+        a proper conversion anm d sets the correct length."""
 
         if val is None:
             self.value = b''
@@ -88,43 +94,37 @@ class TLV:
         elif isinstance(val, bool):
             self.value = b'\x01' if val else b'\x00'
         else:
-            raise ValueError('set_value does not support auto conversion from ' +
-                             str(type(val)) +
-                             '. Please convert it manually. Supported: NoneType, bytes, str, bool.')
+            raise ValueError(
+                'set_value does not support auto conversion from {0}. '
+                'Please convert it manually. Supported: NoneType, bytes, str, bool.'.format(str(type(val))))
 
         self.length = len(self.value)
 
-
-    def get_human_readable_tag(self):
+    def get_human_readable_tag(self) -> str:
         """Returns the name of the tag."""
         return TLVNAMES.get(self.tag, '?')
 
-    def get_human_readable_value(self):
+    def get_human_readable_value(self) -> str:
         """Returns a string containing the value."""
-        new_tlv = TLVTYPES.get(self.tag, 'BINARY')
-        result = ''
+        new_tlv = TLVTYPES.get(self.tag, 'BINARY')  # type: str
 
         if new_tlv == 'IP':
-            result = ('malformed' if len(self.value) != 4 else
-                      ('{:d}.{:d}.{:d}.{:d}'
-                       .format(self.value[0], self.value[1], self.value[2], self.value[3])))
+            return ('malformed' if len(self.value) != 4 else
+                    ('{:d}.{:d}.{:d}.{:d}'
+                     .format(self.value[0], self.value[1], self.value[2], self.value[3])))
         elif new_tlv == 'MAC':
-            result = ('malformed' if len(self.value) != 6 else
-                      ('{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}'
-                       .format(self.value[0], self.value[1], self.value[2],
-                               self.value[3], self.value[4], self.value[5])))
+            return ('malformed' if len(self.value) != 6 else
+                    ('{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}'
+                     .format(self.value[0], self.value[1], self.value[2],
+                             self.value[3], self.value[4], self.value[5])))
         elif new_tlv == 'STRING':
-            result = 'empty' if len(self.value) == 0 else self.value[:-1].decode('utf-8')
+            return 'empty' if len(self.value) == 0 else self.value[:-1].decode('utf-8')
         elif new_tlv == 'BOOLEAN':
-            result = ('malformed' if len(self.value) != 1 else
-                      str(self.value[0] == 1))
+            return ('malformed' if len(self.value) != 1 else
+                    str(self.value[0] == 1))
         elif new_tlv == 'BINARY':
-            result = ''.join([format(b, '02X') for b in self.value])
+            return ''.join([format(b, '02X') for b in self.value])
         elif new_tlv == 'BYTE':
-            result = 'malformed' if len(self.value) != 1 else '{:d}'.format(self.value[0])
+            return 'malformed' if len(self.value) != 1 else '{:d}'.format(self.value[0])
         else:
-            result = '-'
-
-        return result
-
-
+            return '-'

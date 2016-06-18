@@ -8,19 +8,18 @@ from sys import argv
 from getpass import getpass
 import socket
 
-from TLPresentation import present_discovery, present_cable_test, present_port_statistics, present_qos
+from TLPresentation import present_discovery, present_port_statistics, present_cable_test
 from TLPacket import TLPacket
 from TLCrypt import tl_rc4_crypt
-from TLPacketForge import forge_question, forge_common_packet, end_tlv_list
-from TLActions import tl_test_cable, tl_discover, TLSwitch, tl_get_token,\
-    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets, tl_get_qos, tl_send_and_wait_for_response
-from TLTLVs import TLV
+from TLActions import tl_discover, TLSwitch, tl_get_token,\
+    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets,\
+    tl_test_cable
+
 
 def choose_switch(switch_ip_arg=None):
     """Discover switches, list details and display selection prompt."""
-    if switch_ip_arg != None:
-        print('Only trying ' + switch_ip_arg)
-        print()
+    if switch_ip_arg is not None:
+        print('Only trying ' + switch_ip_arg + '\n')
         tl_discover(switch_ip_arg)
     else:
         tl_discover()
@@ -63,7 +62,6 @@ def decrypt_test_dot_raw():
     with open('test.dec', 'wb') as outfile:
         outfile.write(out)
 
-
     packet = TLPacket(out)
     with open('test2.dec', 'wb') as outfile:
         outfile.write(packet.to_byte_array())
@@ -71,21 +69,18 @@ def decrypt_test_dot_raw():
     print(packet)
 
 
-
 def main():
-    """The main method."""    
+    """The main method."""
     try:
-        opts, _ = getopt.getopt(argv[1:], 'ldi:')
+        opts = getopt.getopt(argv[1:], 'ldi:')[0]
     except getopt.GetoptError:
         opts = []
     except:
         raise
 
-
     only_decrypt = False
     only_listen_and_decrypt = False
     switch_ip_arg = None
-    selected_switch = None
 
     for opt, arg in opts:
         if opt == '-i':
@@ -124,8 +119,6 @@ def main():
                 print("<----- Computer to switch\n" + '\033[0m')
             except IOError:
                 pass
-
-
     elif only_decrypt:
         decrypt_test_dot_raw()
     else:
@@ -135,17 +128,17 @@ def main():
         stats = tl_get_port_statistics(selected_switch.mac, selected_switch.ip4, 1000)
         present_port_statistics(stats)
 
-        if selected_switch != None:
+        if selected_switch is not None:
             token = tl_get_token(selected_switch.mac, selected_switch.ip4)
 
             logged_in = False
-            if token != None:
+            if token is not None:
                 while not logged_in:
                     username = input('User: ')
                     password = getpass('Password: ')
 
                     login_status = tl_login(selected_switch.mac, selected_switch.ip4,
-                                            token, username, b'\xff' * (8000)) == 7
+                                            token, username, password)
                     if login_status == 1:
                         print('Wrong credentials\n')
                     elif login_status != 0:
@@ -153,7 +146,11 @@ def main():
                     else:
                         print('Login successful\n')
                         logged_in = True
-                
+
+                for i in range(1, 9):
+                    res = tl_test_cable(selected_switch.mac, selected_switch.ip4, token, i, username, password)
+                    if res is not None:
+                        present_cable_test(res)
 
 if __name__ == '__main__':
     main()
