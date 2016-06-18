@@ -101,22 +101,20 @@ def main():
 
         while True:
             try:
-                data, _ = receive1.recvfrom(1500)
+                data, _ = receive1.recvfrom(1500)[0]
                 packet = TLPacket(tl_rc4_crypt(data))
 
-                print('\033[94m' + "-----> Switch to computer")
-                print(packet)
-                print("<----- Switch to computer\n" + '\033[0m')
+                print('\u001B[94m-----> Switch to computer\n{0}'
+                      '\n<----- Switch to computer\n\u001B[0m'.format(str(packet)))
             except IOError:
                 pass
 
             try:
-                data, _ = receive2.recvfrom(1500)
+                data = receive2.recvfrom(1500)[0]
                 packet = TLPacket(tl_rc4_crypt(data))
 
-                print('\033[91m' + "-----> Computer to switch")
-                print(packet)
-                print("<----- Computer to switch\n" + '\033[0m')
+                print('\u001B[91m-----> Computer to switch\n{0}'
+                      '\n<----- Computer to switch\n\u001B[0m'.format(str(packet)))
             except IOError:
                 pass
     elif only_decrypt:

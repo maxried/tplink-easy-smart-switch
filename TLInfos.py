@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from typing import Tuple, List, Dict
 from struct import unpack
 from TLPacket import TLPacket
 from TLTLVs import TLVTAGS, TLV
@@ -7,12 +8,9 @@ from TLTLVs import TLVTAGS, TLV
 """Toolbox to store the state of the switch"""
 
 
-from typing import List, Dict
-
-
 class PortStatisticsPort:
     """Stats of a single port"""
-    def __init__(self, portstat: tuple):
+    def __init__(self, portstat: Tuple[int, bool, int, int, int, int, int]):
         self.number = portstat[0]  # type: int
         self.enabled = portstat[1]  # type: bool
         self.current_mode = portstat[2]  # type: int

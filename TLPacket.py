@@ -40,7 +40,7 @@ class TLPacket:
                 ntlv = TLV()  # type: TLV
                 ntlv.tag, ntlv.length = unpack('>HH', body[:4])
                 if len(body) >= ntlv.length + 4:
-                    ntlv.value = body[4:ntlv.length + 4]
+                    ntlv.value = bytes(body[4:ntlv.length + 4])
                     body = body[ntlv.length + 4:]
 
                 self.tlvs.append(ntlv)
