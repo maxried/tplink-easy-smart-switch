@@ -16,10 +16,10 @@ from TLActions import tl_discover, TLSwitch, tl_get_token,\
     tl_test_cable
 
 
-def choose_switch(switch_ip_arg=None):
+def choose_switch(switch_ip_arg: str=None):
     """Discover switches, list details and display selection prompt."""
     if switch_ip_arg is not None:
-        print('Only trying ' + switch_ip_arg + '\n')
+        print('Only trying {0}\n'.format(switch_ip_arg))
         tl_discover(switch_ip_arg)
     else:
         tl_discover()
@@ -139,7 +139,7 @@ def main():
                     password = getpass('Password: ')
 
                     login_status = tl_login(selected_switch.mac, selected_switch.ip4,
-                                            token, username, password)
+                                            token, username, password)   # type: int
                     if login_status == 1:
                         print('Wrong credentials\n')
                     elif login_status != 0:
