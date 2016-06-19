@@ -101,7 +101,7 @@ def main():
 
         while True:
             try:
-                data, _ = receive1.recvfrom(1500)[0]
+                data = receive1.recvfrom(1500)[0]
                 packet = TLPacket(tl_rc4_crypt(data))
 
                 print('\u001B[94m-----> Switch to computer\n{0}'
