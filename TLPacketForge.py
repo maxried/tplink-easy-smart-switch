@@ -28,7 +28,7 @@ def forge_common_packet(opcode: int, switch_mac: bytes = b'\x00\x00\x00\x00\x00\
     return packet
 
 
-def end_tlv_list(packet) -> None:
+def end_tlv_list(packet: TLPacket) -> None:
     """Puts the end of transmission TLV to the end of the packet. Use before transmission."""
 
     tlv = TLV(TLVTAGS['EOT'])  # type: TLV
