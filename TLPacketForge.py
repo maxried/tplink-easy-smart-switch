@@ -73,7 +73,7 @@ def forge_authorized_packet(switch_mac: bytes, token: int, user: str, password: 
 def forge_login(switch_mac: bytes, token: int, user: str, password: str) -> bytes:
     """Authorize with switch."""
 
-    packet = forge_authorized_packet(switch_mac, token, user, password)
+    packet = forge_authorized_packet(switch_mac, token, user, password)  # type: TLPacket
 
     end_tlv_list(packet)
 
@@ -83,7 +83,7 @@ def forge_login(switch_mac: bytes, token: int, user: str, password: str) -> byte
 def forge_cable_test(switch_mac: bytes, token: int, portnum: int, user: str, password: str) -> bytes:
     """Issue a cable test quest."""
 
-    packet = forge_authorized_packet(switch_mac, token, user, password)
+    packet = forge_authorized_packet(switch_mac, token, user, password)  # type: TLPacket
 
     # First byte is port number, second is 0x01, no clue why.
     payload = pack('>6B', portnum, 1, 0, 0, 0, 0)  # type: bytes
