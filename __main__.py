@@ -33,8 +33,11 @@ def main():
     setup_argparser()
 
     result = PARSER.parse_args()
+    if result is None:
+        print('Error parsing arguments.')
+        exit()
 
-    if result.command is None:
+    if result is not None and result.command is None:
         result.command = "discover"
 
     TLActions.DEBUG = result.debug

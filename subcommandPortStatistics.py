@@ -3,7 +3,7 @@
 import TLActions
 import TLPresentation
 
-SWITCH = ...  # type: TLSwitch
+SWITCH = ...  # type: TLActions.TLSwitch
 TOKEN = ...  # type: int
 
 
@@ -22,7 +22,7 @@ def name():
     return 'showStats'
 
 
-def setup_parser(parser):
+def setup_parser(_):
     pass
 
 

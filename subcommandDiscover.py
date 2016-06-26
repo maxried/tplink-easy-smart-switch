@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import ipaddress
 import TLActions
 import TLPresentation
 
@@ -9,7 +8,7 @@ def name():
     return 'discover'
 
 
-def setup_parser(parser):
+def setup_parser(_):
     pass
 
 

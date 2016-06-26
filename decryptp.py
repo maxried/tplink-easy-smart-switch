@@ -5,15 +5,13 @@
 
 import getopt
 from sys import argv
-from getpass import getpass
 import socket
 
-from TLPresentation import present_discovery, present_port_statistics, present_cable_test
+from TLPresentation import present_discovery
 from TLPacket import TLPacket
 from TLCrypt import tl_rc4_crypt
 from TLActions import tl_discover, TLSwitch, tl_get_token,\
-    tl_login, tl_get_port_statistics, PORTSC, PORTCS, tl_init_sockets,\
-    tl_test_cable, tl_test
+    PORTSC, PORTCS, tl_init_sockets, tl_test
 
 
 def choose_switch(switch_ip_arg: str=None):
