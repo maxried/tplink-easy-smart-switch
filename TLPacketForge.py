@@ -6,7 +6,7 @@ from random import randint
 from struct import pack
 
 from TLPacket import TLPacket
-from TLTLVs import TLV, TLVTAGS
+from TLTLVs import TLTLV, TLVTAGS
 
 
 def forge_common_packet(opcode: int, switch_mac: bytes = b'\x00\x00\x00\x00\x00\x00',
@@ -29,9 +29,9 @@ def forge_common_packet(opcode: int, switch_mac: bytes = b'\x00\x00\x00\x00\x00\
 
 
 def end_tlv_list(packet: TLPacket) -> None:
-    """Puts the end of transmission TLV to the end of the packet. Use before transmission."""
+    """Puts the end of transmission TLTLV to the end of the packet. Use before transmission."""
 
-    tlv = TLV(TLVTAGS['EOT'])  # type: TLV
+    tlv = TLTLV(TLVTAGS['EOT'])  # type: TLTLV
     packet.tlvs.append(tlv)
 
 
@@ -49,7 +49,7 @@ def forge_get_token(switch_mac: bytes) -> bytes:
 
     packet = forge_common_packet(TLPacket.OPCODES['GET'], switch_mac)  # type: TLPacket
 
-    tlv = TLV(TLVTAGS['SYS_GET_TOKEN'])  # type: TLV
+    tlv = TLTLV(TLVTAGS['SYS_GET_TOKEN'])  # type: TLTLV
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -61,10 +61,10 @@ def forge_authorized_packet(switch_mac: bytes, token: int, user: str, password: 
     packet = forge_common_packet(TLPacket.OPCODES['SET'],
                                  switch_mac, b'\x00\x00\x00\x00\x00\x00', token)  # type: TLPacket
 
-    tlv = TLV(TLVTAGS['SYSUSER_OLD_NAME'], user)  # type: TLV
+    tlv = TLTLV(TLVTAGS['SYSUSER_OLD_NAME'], user)  # type: TLTLV
     packet.tlvs.append(tlv)
 
-    tlv = TLV(TLVTAGS['SYSUSER_OLD_PASSWORD'], password)  # type: TLV
+    tlv = TLTLV(TLVTAGS['SYSUSER_OLD_PASSWORD'], password)  # type: TLTLV
     packet.tlvs.append(tlv)
 
     return packet
@@ -87,7 +87,7 @@ def forge_cable_test(switch_mac: bytes, token: int, portnum: int, user: str, pas
 
     # First byte is port number, second is 0x01, no clue why.
     payload = pack('>6B', portnum, 1, 0, 0, 0, 0)  # type: bytes
-    tlv = TLV(TLVTAGS['MONITOR_CABLE_TEST'], payload)  # type: TLV
+    tlv = TLTLV(TLVTAGS['MONITOR_CABLE_TEST'], payload)  # type: TLTLV
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -101,7 +101,7 @@ def forge_get_port_stats(switch_mac: bytes, token: int) -> bytes:
     packet = forge_common_packet(TLPacket.OPCODES['GET'],
                                  switch_mac, b'\x00\x00\x00\x00\x00\x00', token)  # type: TLPacket
 
-    tlv = TLV(TLVTAGS['MONITOR_PORT_STATISTICS'])  # type: TLV
+    tlv = TLTLV(TLVTAGS['MONITOR_PORT_STATISTICS'])  # type: TLTLV
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -115,7 +115,7 @@ def forge_get_qos(switch_mac: bytes, token: int) -> bytes:
     packet = forge_common_packet(TLPacket.OPCODES['GET'],
                                  switch_mac, b'\x00\x00\x00\x00\x00\x00', token)  # type: TLPacket
 
-    tlv = TLV(TLVTAGS['QOS_BASIC_PRIORITY'])  # type: TLV
+    tlv = TLTLV(TLVTAGS['QOS_BASIC_PRIORITY'])  # type: TLTLV
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)
@@ -129,7 +129,7 @@ def forge_question(switch_mac: bytes, token: int, tag: int) -> TLPacket:
     packet = forge_common_packet(TLPacket.OPCODES['GET'],
                                  switch_mac, b'\x00\x00\x00\x00\x00\x00', token)  # type: TLPacket
 
-    tlv = TLV(tag)  # type: TLV
+    tlv = TLTLV(tag)  # type: TLTLV
     packet.tlvs.append(tlv)
 
     end_tlv_list(packet)

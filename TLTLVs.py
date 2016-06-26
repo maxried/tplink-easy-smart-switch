@@ -37,7 +37,7 @@ _TLVDEFINITIONS = [
     (2054, 'DIS_SETTING_HARD_VER', 'STRING'),
     (2055, 'DIS_SETTING_DHCP_STATE', 'BOOLEAN'),
     (2056, 'DIS_SETTING_IP', 'IP'),
-    (2057, 'DIS_SETTING_MASK', ''),
+    (2057, 'DIS_SETTING_MASK', 'IP'),
     (2058, 'DIS_SETTING_GATEWAY', 'IP'),
     (2304, 'SYSCFG_SAVE_CONFIG', 'NULL'),
     (2305, 'SYS_GET_TOKEN', 'NULL'),
@@ -71,7 +71,7 @@ TLVNAMES = {numeric: readable for (numeric, readable, representation) in _TLVDEF
 TLVTAGS = {readable: numeric for (numeric, readable, representation) in _TLVDEFINITIONS}  # type: Dict[str, int]
 
 
-class TLV:
+class TLTLV:
     """This is a Tag-Length-Value combination as used to communicate with the switches."""
 
     def __init__(self, tag: int=None, val: any=None):
@@ -82,8 +82,8 @@ class TLV:
         self.set_value(val)
 
     def set_value(self, val: bytes) -> None:
-        """Sets the value of the TLV to val by trying to do
-        a proper conversion anm d sets the correct length."""
+        """Sets the value of the TLTLV to val by trying to do
+        a proper conversion and sets the correct length."""
 
         if val is None:
             self.value = b''
@@ -106,6 +106,9 @@ class TLV:
 
     def get_human_readable_value(self) -> str:
         """Returns a string containing the value."""
+        if len(self.value) == 0:
+            return 'unset'
+
         new_tlv = TLVTYPES.get(self.tag, 'BINARY')  # type: str
 
         if new_tlv == 'IP':

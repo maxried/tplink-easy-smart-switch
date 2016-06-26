@@ -29,7 +29,7 @@ def present_discovery(packet: TLPacket) -> None:
 
 
 def present_port_statistics(packet: TLPacket) -> None:
-    print('{0:>2s} {1:<8s} {2:<16s} {3:>10s} {4:>10s} {5:>10s} {6:>10s}'
+    print('{0:>2s} {1:>8s} {2:>10s} {3:>10s} {4:>10s} {5:>10s} {6:>10s}'
           .format('#', 'State', 'Mode', 'Tx Good', 'Tx Bad', 'Rx Good', 'Rx Bad'))
     PortStatistics(packet).print_ports()
 

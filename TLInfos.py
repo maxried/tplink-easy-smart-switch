@@ -3,7 +3,7 @@
 from typing import Tuple, List, Dict
 from struct import unpack
 from TLPacket import TLPacket
-from TLTLVs import TLVTAGS, TLV
+from TLTLVs import TLVTAGS, TLTLV
 
 """Toolbox to store the state of the switch"""
 
@@ -25,7 +25,7 @@ class PortStatistics:
     def __init__(self, packet: TLPacket):
         self.ports = []  # type: List[PortStatisticsPort]
 
-        for i in packet.tlvs:  # type: TLV
+        for i in packet.tlvs:  # type: TLTLV
             if i.tag == TLVTAGS['MONITOR_PORT_STATISTICS'] and len(i.value) == 19:
                 stat = PortStatisticsPort(unpack('>B?BIIII', i.value))  # type: PortStatisticsPort
                 self.ports.append(stat)
@@ -39,5 +39,5 @@ class PortStatistics:
             state = "enabled" if i.enabled else "disabled"  # type: str
             mode = modes.get(i.current_mode, "Unknown")  # type: str
 
-            print('{0:2d} {1:8s} {2:16s} {3:11d} {4:11d} {5:11d} {6:11d}'
+            print('{0:>2d} {1:>8s} {2:>10s} {3:>10d} {4:>10d} {5:>10d} {6:>10d}'
                   .format(i.number, state, mode, i.tx_good, i.tx_bad, i.rx_good, i.rx_bad))

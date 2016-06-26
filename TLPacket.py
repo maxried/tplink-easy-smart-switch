@@ -4,7 +4,61 @@
 
 from typing import List, Dict
 from struct import unpack
-from TLTLVs import TLV
+from TLTLVs import TLTLV
+
+
+TLERRORCODES = {
+    0: 'SYS_OK',
+    -1: 'SYS_ERR_FALSE',
+    -2: 'SYS_ERR',
+    -3: 'SYS_ERR_CANCELLED',
+    -4: 'SYS_ERR_PARAMETER',
+    -5: 'SYS_ERR_TIMEOUT',
+    -6: 'SYS_ERR_FULL',
+    -7: 'SYS_ERR_STATE',
+    -8: 'SYS_ERR_OUT_OF_RESOURCE',
+    -9: 'SYS_ERR_NOT_IMPLEMENTED',
+    -10: 'SYS_ERR_EXISTS',
+    -11: 'SYS_ERR_NOT_FOUND',
+    -12: 'SYS_ERR_FUNC_NOT_ENABLED',
+    1: 'ERR_HEADER_LENGTH',
+    2: 'ERR_TLV_TYPE',
+    3: 'ERR_TLV_LENGTH',
+    4: 'ERR_TLV_VALUE',
+    5: 'ERR_USER_PWD_NOT_MATCHING',
+    6: 'ERR_IP_ERROR',
+    7: 'ERR_USER_PWD_CHANGED',
+    8: 'ERR_TOKEN_ERROR',
+    9: 'ERR_MASK_ERROR',
+    10: 'ERR_GATEWAY_ERROR',
+    11: 'ERR_UPGRADE_IP_CONFLICT',
+    7401: 'ERR_TRUNK_VLAN',
+    7403: 'ERR_TRUNK_RATELIMIT',
+    7404: 'ERR_TRUNK_STORMCONTROL',
+    7405: 'ERR_TRUNK_QOSPRIORITY',
+    7406: 'ERR_TRUNK_PORTSPEED',
+    7407: 'ERR_TRUNK_PORTDUPLEX',
+    7410: 'ERR_TRUNK_PORTNEGO',
+    7415: 'ERR_TRUNK_PORTNUM',
+    7417: 'ERR_TRUNK_FLOWCTRL',
+    7418: 'ERR_TRUNK_PORTSTATUS',
+    7500: 'ERR_INPUT_STR_LEN',
+    7501: 'ERR_DUPLICATE_NAME',
+    7502: 'ERR_VLAN_DISABLE',
+    7503: 'ERR_VLAN_ID_INVALID',
+    7504: 'ERR_VLAN_ENTRY_INDEX',
+    7505: 'ERR_VLAN_FULL',
+    7506: 'ERR_VLAN_EXIST_PVID',
+    7507: 'ERR_VLAN_EXIST',
+    7508: 'ERR_VLAN_NOT_EXIST',
+    7509: 'ERR_VLAN_INS_VLAN_ENTRY',
+    7510: 'ERR_VLAN_DEL_VLAN_ENTRY',
+    7511: 'ERR_VLAN_DEL_DEFAULT_VLAN',
+    7512: 'ERR_VLAN_ENTRY_INVALID',
+    7513: 'ERR_VLAN_ENTRY_DUPLICATE',
+    7514: 'ERR_VLAN_TYPE',
+    7515: 'ERR_VLAN_MTU_LAG_MUTEX'
+}
 
 
 class TLPacket:
@@ -26,7 +80,7 @@ class TLPacket:
             self.token = 0  # type: int
             self.checksum = 0  # type: int
 
-            self.tlvs = []  # type: List[TLV]
+            self.tlvs = []  # type: List[TLTLV]
         elif len(decrypted) >= 32:
             [self.version, self.opcode, self.mac_switch,
              self.mac_computer, self.sequence_number,
@@ -35,9 +89,9 @@ class TLPacket:
 
             body = decrypted[32:]  # type: bytes
 
-            self.tlvs = []  # type: List[TLV]
+            self.tlvs = []  # type: List[TLTLV]
             while len(body) > 3:
-                ntlv = TLV()  # type: TLV
+                ntlv = TLTLV()  # type: TLTLV
                 ntlv.tag, ntlv.length = unpack('>HH', body[:4])
                 if len(body) >= ntlv.length + 4:
                     ntlv.value = bytes(body[4:ntlv.length + 4])
@@ -52,25 +106,26 @@ class TLPacket:
                   'MAC Switch:      {2}\n'
                   'MAC Computer:    {3}\n'
                   'Sequence Number: {4}\n'
-                  'Error:           {5}\n'
-                  'Length:          {6}\n'
-                  'Fragment:        {7}\n'
-                  'Flags:           {8}\n'
-                  'Token:           {9}\n'
-                  'Checksum:        {10}\n'.format(
+                  'Error:           {5} ({6})\n'
+                  'Length:          {7}\n'
+                  'Fragment:        {8}\n'
+                  'Flags:           {9}\n'
+                  'Token:           {10}\n'
+                  'Checksum:        {11}\n'.format(
                       str(self.version),
                       str(self.opcode),
                       ''.join([format(b, '02X') for b in self.mac_switch]),
                       ''.join([format(b, '02X') for b in self.mac_computer]),
                       str(self.sequence_number),
                       str(self.error_code),
+                      TLERRORCODES.get(self.error_code, '?'),
                       str(self.length),
                       str(self.fragment),
                       str(self.flags),
                       str(self.token),
                       str(self.checksum)))
 
-        for tlv in self.tlvs:  # type: TLV
+        for tlv in self.tlvs:  # type: TLTLV
             result += '\nTag {0} ({1})\nLength {2}\nValue: {3}\n'.format(str(tlv.tag), tlv.get_human_readable_tag(),
                                                                          str(tlv.length),
                                                                          tlv.get_human_readable_value())
